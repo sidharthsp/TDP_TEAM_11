@@ -1,11 +1,27 @@
 """main controller."""
-
+#Author:Boyu Shi
+#
+# Copyright 2023 Boyu Shi
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from controller import Robot
 from controller import Accelerometer
 from controller import Camera
 from controller import Motor
 from controller import Motion
 from controller import Receiver
+import math
+import _thread
 
 Robot_num=8
 
@@ -74,6 +90,14 @@ class Nao (Robot):
         receiver_name=self.getName()+"r"
         self.receiver=self.getDevice(receiver_name)
 
+        #GPS
+        self.gps = self.getDevice(self.getName()+"gps")
+        self.gps.enable(self.timeStep)
+
+        # inertial unit
+        self.inertialUnit = self.getDevice(self.getName()+"IU")
+        self.inertialUnit.enable(self.timeStep)
+
     def receive_meaasge(self):
         flag=0
         if(self.receiver.getQueueLength()>0):
@@ -96,11 +120,64 @@ class Nao (Robot):
     def __init__(self):
         Robot.__init__(self)
         self.currentlyPlaying = False
-        # initialize stuff
+        # initialize
         self.findAndEnableDevices()
         self.loadMotionFiles()
         self.receiver.enable(20)
         self.first_pos=0
+        self.ZERO_ANGLE = 0
+        self.catch_ball=False
+
+    def getAngle(self, ballPos, Pos, RollPitchYaw):
+        delta_x = ballPos[0] - Pos[0]
+        delta_y = ballPos[1] - Pos[1]
+        sin = delta_y / math.sqrt(pow(delta_x,2) + pow(delta_y,2))
+        turn_angle = math.asin(sin)
+
+        if turn_angle < 0:
+            if delta_x < 0:
+                turn_angle = - turn_angle - math.pi
+        else:
+            if delta_x < 0:
+                turn_angle = math.pi - turn_angle
+
+        beta = RollPitchYaw[2]
+        Angle = turn_angle - beta
+
+        if Angle < -math.pi:
+            Angle += 2*math.pi
+        if Angle > math.pi:
+            Angle -= 2*math.pi
+
+        return Angle
+
+    def detectAngle(self, init_face_dir, angle):
+        while True:
+            present_face_dir = self.inertialUnit.getRollPitchYaw()
+            temp = abs(present_face_dir[2] - init_face_dir[2] - angle)
+            if temp < 0.2:
+                if self.currentlyPlaying:
+                    self.currentlyPlaying.stop()
+                    self.currentlyPlaying = None
+                self.ISDETECTING = False
+                return
+
+    def turnAround(self,ballPos):
+        Pos = self.gps.getValues()
+        init_face_dir = self.inertialUnit.getRollPitchYaw()
+        angle = self.getAngle(ballPos, Pos, init_face_dir)
+        if abs(angle) >= 0.2:
+            if not self.ISDETECTING:
+                self.ISDETECTING = True
+                _thread.start_new_thread(self.detectAngle,(init_face_dir, angle))
+            if angle > 0:
+                self.startMotion(self.turnLeft60)
+            else:
+                self.startMotion(self.turnRight60)
+
+    def turn_label(self,ballPos):
+        self.ISDETECTING = False
+        _thread.start_new_thread(self.turnAround, (ballPos,))
 
 robot = Nao()
 
@@ -120,6 +197,7 @@ while robot.step(timestep) != -1:
     if(robot.receive_meaasge()):
         ball_pos=robot.newest[8]
         print(ball_pos)
+        robot.turn_label(ball_pos)
         #calculate angle and distance
 
         #decide turn,move or shoot
@@ -129,7 +207,8 @@ while robot.step(timestep) != -1:
         #change angle
 
     #move forward
-    robot.startMotion(robot.move)
+    if not robot.currentlyPlaying:
+        robot.startMotion(robot.move)
 
 
 # Enter here exit cleanup code.
