@@ -577,6 +577,33 @@ class Nao(Robot):
                     self.activate_motion = "DiveRight"
                     self.startMotion(self.DiveRight)
         return
+    def x_t_calculate(self,control_rob):
+        if robot.newest[control_rob][0]==robot.newest[Robot_num*2][0]:
+            x_t=robot.newest[control_rob][0]
+        else:
+            if (robot.team == 'R'):
+                if (robot.newest[control_rob][1] - robot.newest[Robot_num * 2][1])!=0:
+                    k = (robot.newest[control_rob][1] - robot.newest[Robot_num * 2][1]) / (
+                            robot.newest[control_rob][0] - robot.newest[Robot_num * 2][0])
+                else:
+                    k=0
+                b = robot.newest[control_rob][1] - k * robot.newest[control_rob][0]
+                if k!=0:
+                    x_t = (-goal_dis - b) / k
+                else:
+                    x_t=robot.newest[Robot_num*2][0]
+            elif (robot.team == 'B'):
+                if (robot.newest[control_rob][1] - robot.newest[Robot_num * 2][1])!=0:
+                    k = (robot.newest[control_rob][1] - robot.newest[Robot_num * 2][1]) / (
+                            robot.newest[control_rob][0] - robot.newest[Robot_num * 2][0])
+                else:
+                    k=0
+                b = robot.newest[control_rob][1] - k * robot.newest[control_rob][0]
+                if k!=0:
+                    x_t = (goal_dis - b) / k
+                else:
+                    x_t=robot.newest[Robot_num*2][0]
+        return x_t
 
 
 robot = Nao()
@@ -632,19 +659,20 @@ while robot.step(timestep) != -1:
                     if(control_rob!=-1):#if someone control the ball
                         if(robot.team=='R'):
                             if(robot.belong_team==1):#if opposing player in possession of the ball, move to the corresponding position and pounce
-                                k=(robot.newest[control_rob][1]-robot.newest[Robot_num*2][1])/(robot.newest[control_rob][0]-robot.newest[Robot_num*2][0])
-                                b=robot.newest[control_rob][1]-k*robot.newest[control_rob][0]
-                                x_t=(-goal_dis-b)/k
-                                robot.tuneLR(x_t,Pos,1)
+                                if(robot.newest[control_rob][1]>ball_pos[1]):
+                                    x_t=robot.x_t_calculate(control_rob)
+                                    robot.tuneLR(x_t,Pos,1)
+                                else:
+                                    robot.tuneLR(ball_pos[0], Pos, 0)
                             else:
                                 robot.tuneLR(ball_pos[0],Pos,0)
                         elif(robot.team=='B'):
                             if (robot.belong_team == 0):
-                                k = (robot.newest[control_rob][1] - robot.newest[Robot_num * 2][1]) / (
-                                            robot.newest[control_rob][0] - robot.newest[Robot_num * 2][0])
-                                b = robot.newest[control_rob][1] - k * robot.newest[control_rob][0]
-                                x_t = (goal_dis - b) / k
-                                robot.tuneLR(x_t, Pos, 1)
+                                if (robot.newest[control_rob][1] < ball_pos[1]):
+                                    x_t = robot.x_t_calculate(control_rob)
+                                    robot.tuneLR(x_t, Pos, 1)
+                                else:
+                                    robot.tuneLR(ball_pos[0], Pos, 0)
                             else:
                                 robot.tuneLR(ball_pos[0],Pos,0)
                     else:#if no one control the ball
@@ -653,20 +681,20 @@ while robot.step(timestep) != -1:
                     if (control_rob != -1):
                         if (robot.team == 'R'):
                             if (robot.belong_team == 1):#if opposing player in possession of the ball,move to prepare to defend
-                                k = (robot.newest[control_rob][1] - robot.newest[Robot_num * 2][1]) / (
-                                            robot.newest[control_rob][0] - robot.newest[Robot_num * 2][0])
-                                b = robot.newest[control_rob][1] - k * robot.newest[control_rob][0]
-                                x_t = (-goal_dis - b) / k
-                                robot.tuneLR(x_t,Pos,0)
+                                if (robot.newest[control_rob][1] > ball_pos[1]):
+                                    x_t = robot.x_t_calculate(control_rob)
+                                    robot.tuneLR(x_t, Pos, 1)
+                                else:
+                                    robot.tuneLR(ball_pos[0], Pos, 0)
                             else:
                                 robot.tuneLR(ball_pos[0],Pos,0)
                         elif (robot.team == 'B'):
                             if (robot.belong_team == 0):
-                                k = (robot.newest[control_rob][1] - robot.newest[Robot_num * 2][1]) / (
-                                        robot.newest[control_rob][0] - robot.newest[Robot_num * 2][0])
-                                b = robot.newest[control_rob][1] - k * robot.newest[control_rob][0]
-                                x_t = (goal_dis - b) / k
-                                robot.tuneLR(x_t,Pos,0)
+                                if (robot.newest[control_rob][1] < ball_pos[1]):
+                                    x_t = robot.x_t_calculate(control_rob)
+                                    robot.tuneLR(x_t, Pos, 1)
+                                else:
+                                    robot.tuneLR(ball_pos[0], Pos, 0)
                             else:
                                 robot.tuneLR(ball_pos[0],Pos,0)
                     else:#if no one control the ball
