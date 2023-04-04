@@ -14,7 +14,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import numpy as np
 from controller import Robot
 from controller import Accelerometer
 from controller import Camera
@@ -42,8 +42,8 @@ class Nao(Robot):
     def loadMotionFiles(self):
         self.move = Motion('../../motions/Move.motion')
         self.backwards = Motion('../../motions/Backwards.motion')
-        self.sideStepLeft = Motion('../../motions/SideStepLeft.motion')
-        self.sideStepRight = Motion('../../motions/SideStepRight.motion')
+        self.SideStepLeft = Motion('../../motions/SideStepLeft.motion')
+        self.SideStepRight = Motion('../../motions/SideStepRight.motion')
         self.turnLeft30 = Motion('../../motions/TurnLeft30.motion')
         self.turnRight30 = Motion('../../motions/TurnRight30.motion')
         self.shoot = Motion('../../motions/Shoot.motion')
@@ -62,6 +62,8 @@ class Nao(Robot):
             "turnRight30":4.52,
             "shoot":1.16,
             "standup":3.7,
+            "DiveLeft":2.0,
+            "DiveRight":2.0,
         }
 
     def startMotion(self, motion):
@@ -196,7 +198,7 @@ class Nao(Robot):
         self.motion_start_time=0
         self.target_is=-1 #0-> target is ball, 1-> target is another point,-1->target need initialise
         self.set_motion_time_direc()#make the motion-cost time dictionaries
-        self.dis=[]
+        self.dis=np.zeros(Robot_num*2)
 
     def getAngle(self, target_Pos, Pos, RollPitchYaw):#Ziyuan Liu
         #get the angle between robot's face direction and ball's postion
@@ -418,7 +420,7 @@ class Nao(Robot):
         control_rob=-1
         for i in range(2 * Robot_num):
             if (math.sqrt((self.newest[i][0] - ball_pos[0]) ** 2 + (
-                    self.newest[i][1] - ball_pos[1]) ** 2)) < 0.2:
+                    self.newest[i][1] - ball_pos[1]) ** 2)) < 0.4:
                 control_rob=i
                 if (i % 2 == 0):
                     red_control += 1
@@ -438,10 +440,10 @@ class Nao(Robot):
     def in_goal_area(self):
         in_goal_area=False
         if robot.team=='R':
-            if -goal_x_width/2<=self.newest[Robot_num*2][0]<=goal_x_width/2 and -goal_dis<=self.newest[Robot_num*2][0]<=-goal_dis+1:
+            if -goal_x_width/2<=self.newest[Robot_num*2][0]<=goal_x_width/2 and -goal_dis<=self.newest[Robot_num*2][1]<=-goal_dis+1:
                 in_goal_area=True
         elif robot.team=='B':
-            if -goal_x_width/2<=self.newest[Robot_num*2][0]<=goal_x_width/2 and goal_dis-1<=self.newest[Robot_num*2][0]<=goal_dis:
+            if -goal_x_width/2<=self.newest[Robot_num*2][0]<=goal_x_width/2 and goal_dis-1<=self.newest[Robot_num*2][1]<=goal_dis:
                 in_goal_area=True
         return in_goal_area
 
@@ -455,7 +457,7 @@ class Nao(Robot):
                 front_door=2
             elif pos[1]<-goal_dis:
                 front_door=3
-            elif -goal_dis<pos[1]<-goal_dis+0.5:
+            elif pos[1]>-goal_dis+0.3:
                 front_door=4
         elif robot.team=='B':
             if pos[0]>swerve_x_pos:
@@ -464,7 +466,7 @@ class Nao(Robot):
                 front_door=1
             elif pos[1]>goal_dis:
                 front_door=3
-            elif pos[1]<goal_dis-0.5:
+            elif pos[1]<goal_dis-0.3:
                 front_door=4
         return front_door
 
@@ -536,13 +538,46 @@ class Nao(Robot):
     """
     def circle_turn(self, turn_dir):#Boyu Shi
         if turn_dir == 'r':
-            self.startMotion(self.sideStepRight)
+            self.startMotion(self.SideStepRight)
         elif turn_dir == 'l':
-            self.startMotion(self.sideStepLeft)
+            self.startMotion(self.SideStepLeft)
         else:
             print(str(self.rob_name)+"wrong input for circle turn")
         return
     """
+    def tuneLR(self,x_t,Pos,ifdive):
+        if self.team=="R":
+            if (math.fabs(x_t - Pos[0]) > 0.5):
+                if (x_t < Pos[0] and Pos[0]> -swerve_x_pos):
+                    self.activate_motion = "SideStepLeft"
+                    self.startMotion(self.SideStepLeft)
+                elif x_t > Pos[0] and Pos[0]< swerve_x_pos:
+                    self.activate_motion = "SideStepRight"
+                    self.startMotion(self.SideStepRight)
+            elif ifdive==1:
+                if (x_t <= Pos[0]):
+                    self.activate_motion = "DiveLeft"
+                    self.startMotion(self.DiveLeft)
+                else:
+                    self.activate_motion = "DiveRight"
+                    self.startMotion(self.DiveRight)
+        elif self.team=="B":
+            if (math.fabs(x_t - Pos[0]) > 0.5):
+                if (x_t > Pos[0] and Pos[0] < swerve_x_pos):
+                    self.activate_motion = "SideStepLeft"
+                    self.startMotion(self.SideStepLeft)
+                elif x_t < Pos[0] and Pos[0]> -swerve_x_pos:
+                    self.activate_motion = "SideStepRight"
+                    self.startMotion(self.SideStepRight)
+            elif ifdive==1:
+                if (x_t >= Pos[0]):
+                    self.activate_motion = "DiveLeft"
+                    self.startMotion(self.DiveLeft)
+                else:
+                    self.activate_motion = "DiveRight"
+                    self.startMotion(self.DiveRight)
+        return
+
 
 robot = Nao()
 
@@ -561,7 +596,7 @@ timestep = int(robot.getBasicTimeStep())
 initial_robotlist()
 # Main loop:
 # - perform simulation steps until Webots is stopping the controller
-"""
+
 #main written by Boyu Shi
 robot.target_pos=robot.gps.getValues()
 robot.stand.play()
@@ -580,6 +615,7 @@ while robot.step(timestep) != -1:
             else:
                 robot.currentlyPlaying.stop()
                 robot.activate_motion=None
+        #make robot face to the pitch
         if robot.team=='R':
             robot.target_pos=[Pos[0],Pos[1]+0.3]
         elif robot.team=='B':
@@ -588,132 +624,68 @@ while robot.step(timestep) != -1:
             print(str(robot.rob_name)+"Uncorrectly name the player:" + robot.rob_name + "You need to set team name R or B first")
         present_face_dir = robot.inertialUnit.getRollPitchYaw()
         robot.if_dir(robot.target_pos, Pos, present_face_dir)
-        if (robot.DIR):
+        if (robot.DIR):#if robot face to the pitch
             move_dir=robot.if_front_door()
-            if(move_dir==0):
+            if(move_dir==0):#if robot is in front of door
                 control_rob = robot.check_belong()
-                if(robot.in_goal_area()):
-                    if(control_rob!=-1):
+                if(robot.in_goal_area()):#if robot is in the goal area
+                    if(control_rob!=-1):#if someone control the ball
                         if(robot.team=='R'):
-                            if(robot.belong_team==1):
+                            if(robot.belong_team==1):#if opposing player in possession of the ball, move to the corresponding position and pounce
                                 k=(robot.newest[control_rob][1]-robot.newest[Robot_num*2][1])/(robot.newest[control_rob][0]-robot.newest[Robot_num*2][0])
                                 b=robot.newest[control_rob][1]-k*robot.newest[control_rob][0]
                                 x_t=(-goal_dis-b)/k
-                                if(math.abs(x_t-Pos[0])>0.5):
-                                    if(x_t<Pos[0]):
-                                        robot.activate_motion = "sideStepLeft"
-                                        robot.startMotion(robot.SideStepLeft)
-                                    else:
-                                        robot.activate_motion = "sideStepRight"
-                                        robot.startMotion(robot.SideStepRight)
-                                else:
-                                    if (x_t < Pos[0]):
-                                        robot.activate_motion = "DiveLeft"
-                                        robot.startMotion(robot.DiveLeft)
-                                    else:
-                                        robot.activate_motion = "DiveRight"
-                                        robot.startMotion(robot.DiveRight)
+                                robot.tuneLR(x_t,Pos,1)
+                            else:
+                                robot.tuneLR(ball_pos[0],Pos,0)
                         elif(robot.team=='B'):
                             if (robot.belong_team == 0):
                                 k = (robot.newest[control_rob][1] - robot.newest[Robot_num * 2][1]) / (
                                             robot.newest[control_rob][0] - robot.newest[Robot_num * 2][0])
                                 b = robot.newest[control_rob][1] - k * robot.newest[control_rob][0]
                                 x_t = (goal_dis - b) / k
-                                if (math.abs(x_t - Pos[0]) > 0.5):
-                                    if (x_t > Pos[0]):
-                                        robot.activate_motion = "sideStepLeft"
-                                        robot.startMotion(robot.SideStepLeft)
-                                    else:
-                                        robot.activate_motion = "sideStepRight"
-                                        robot.startMotion(robot.SideStepRight)
-                                else:
-                                    if (x_t > Pos[0]):
-                                        robot.activate_motion = "DiveLeft"
-                                        robot.startMotion(robot.DiveLeft)
-                                    else:
-                                        robot.activate_motion = "DiveRight"
-                                        robot.startMotion(robot.DiveRight)
-                    else:
-                        team_pos=robot.nearest_teammate()
-                        k = (team_pos[1] - robot.newest[Robot_num * 2][1]) / (
-                                team_pos[0] - robot.newest[Robot_num * 2][0])
-                        b = team_pos[1] - k * team_pos[0]
-                        if(robot.team=='R'):
-                            y=robot.newest[Robot_num * 2][1]
-                            robot.target_pos=[(y-0.3-b)/k,y-0.3]
-                        elif(robot.team=='B'):
-                            y = robot.newest[Robot_num * 2][1]
-                            robot.target_pos = [(y + 0.3 - b) / k, y + 0.3]
-                        present_face_dir = robot.inertialUnit.getRollPitchYaw()
-                        robot.if_dir(robot.target_pos, Pos, present_face_dir)
-                        if (robot.DIR):
-                            robot.if_catch_ball(robot.target_pos)
-                            if (robot.target_is == 0):
-                                if (robot.CATCH_BALL):
-                                    robot.target_is = -1
-                                    robot.ifshoot(ball_pos)
-                                    if (robot.IFSHOOT):
-                                        robot.activate_motion = "shoot"
-                                        robot.startMotion(robot.shoot)
-                                    else:
-                                        robot.activate_motion = "move"
-                                        robot.startMotion(robot.move)
-                                else:
-                                    robot.IFSHOOT = False
-                                    robot.activate_motion = "move"
-                                    robot.startMotion(robot.move)
-                            elif (robot.target_is == 1):
-                                if (robot.CATCH_BALL):
-                                    robot.target_is = -1
-                                else:
-                                    robot.activate_motion = "move"
-                                    robot.startMotion(robot.move)
-                        else:
-                            robot.turn_label(robot.target_pos)
-                else:
+                                robot.tuneLR(x_t, Pos, 1)
+                            else:
+                                robot.tuneLR(ball_pos[0],Pos,0)
+                    else:#if no one control the ball
+                        robot.tuneLR(ball_pos[0],Pos,0)
+                else:#if ball is not in the goal area
                     if (control_rob != -1):
                         if (robot.team == 'R'):
-                            if (robot.belong_team == 1):
+                            if (robot.belong_team == 1):#if opposing player in possession of the ball,move to prepare to defend
                                 k = (robot.newest[control_rob][1] - robot.newest[Robot_num * 2][1]) / (
                                             robot.newest[control_rob][0] - robot.newest[Robot_num * 2][0])
                                 b = robot.newest[control_rob][1] - k * robot.newest[control_rob][0]
                                 x_t = (-goal_dis - b) / k
-                                if (math.abs(x_t - Pos[0]) > 0.5):
-                                    if (x_t < Pos[0]):
-                                        robot.activate_motion = "sideStepLeft"
-                                        robot.startMotion(robot.SideStepLeft)
-                                    else:
-                                        robot.activate_motion = "sideStepRight"
-                                        robot.startMotion(robot.SideStepRight)
-                                else:
-                                    if (x_t < Pos[0]):
-                                        robot.activate_motion = "DiveLeft"
-                                        robot.startMotion(robot.DiveLeft)
-                                    else:
-                                        robot.activate_motion = "DiveRight"
-                                        robot.startMotion(robot.DiveRight)
+                                robot.tuneLR(x_t,Pos,0)
+                            else:
+                                robot.tuneLR(ball_pos[0],Pos,0)
                         elif (robot.team == 'B'):
                             if (robot.belong_team == 0):
                                 k = (robot.newest[control_rob][1] - robot.newest[Robot_num * 2][1]) / (
                                         robot.newest[control_rob][0] - robot.newest[Robot_num * 2][0])
                                 b = robot.newest[control_rob][1] - k * robot.newest[control_rob][0]
                                 x_t = (goal_dis - b) / k
-                                if (math.abs(x_t - Pos[0]) > 0.5):
-                                    if (x_t > Pos[0]):
-                                        robot.activate_motion = "sideStepLeft"
-                                        robot.startMotion(robot.SideStepLeft)
-                                    else:
-                                        robot.activate_motion = "sideStepRight"
-                                        robot.startMotion(robot.SideStepRight)
-                                else:
-                                    if (x_t > Pos[0]):
-                                        robot.activate_motion = "DiveLeft"
-                                        robot.startMotion(robot.DiveLeft)
-                                    else:
-                                        robot.activate_motion = "DiveRight"
-                                        robot.startMotion(robot.DiveRight)
-            else:
-                robot.turn_label(robot.target_pos)
+                                robot.tuneLR(x_t,Pos,0)
+                            else:
+                                robot.tuneLR(ball_pos[0],Pos,0)
+                    else:#if no one control the ball
+                        robot.tuneLR(ball_pos[0],Pos,0)
+            else:#if goalkeeper is not in front of the door
+                if move_dir==1:
+                    robot.activate_motion = "SideStepLeft"
+                    robot.startMotion(robot.SideStepLeft)
+                elif move_dir==2:
+                    robot.activate_motion = "SideStepRight"
+                    robot.startMotion(robot.SideStepRight)
+                elif move_dir==3:
+                    robot.activate_motion = "move"
+                    robot.startMotion(robot.move)
+                elif move_dir==4:
+                    robot.activate_motion = "backwards"
+                    robot.startMotion(robot.backwards)
+        else:#if goalkeeper don't face to the pitch
+            robot.turn_label(robot.target_pos)
 
 
 
@@ -726,3 +698,4 @@ while robot.step(timestep) != -1:
 
 while robot.step(timestep) != -1:
     robot.startMotion(robot.DiveLeft)
+"""
