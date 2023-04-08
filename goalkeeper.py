@@ -301,21 +301,7 @@ class Nao(Robot):
         else:
             self.CATCH_BALL = False
         return
-    """not in use
-    def goal_dir(self):#Boyu Shi
-        #randmly choose a direction to shoot
-        xx = random.uniform(-goal_x_width / 2, goal_x_width / 2)
-        selfpos = self.gps.getValues()
-        if self.team == 'B':
-            target_pos = [xx, -goal_dis, 0]
-        elif self.team == 'R':
-            target_pos = [xx, goal_dis, 0]
-        else:
-            print(str(self.rob_name)+"Uncorrectly name the player:" + self.rob_name + "You need to set team name R or B first")
-            return -1
-        dir = self.getAngle(target_pos, selfpos, self.inertialUnit.getRollPitchYaw())
-        return dir
-    """
+
     def ifshoot(self, ballPos):#Boyu Shi
         #check if the ball is in a suitable position to shoot
         self.IFSHOOT = False
@@ -329,73 +315,6 @@ class Nao(Robot):
             print(str(self.rob_name)+"Uncorrectly name the player:" + self.rob_name + "You need to set team name R or B first")
             return -1
         return
-
-    def isback(self, player_pos,ball_pos):#Boyu Shi
-        #check if robot,ball and goal are orderly in a line
-        middle_line=2.5
-        self.ISBACK=False
-        turn_dir = -1 #-1 isback 0 targe_tpoint is at the back of the ball 1 inside 2 outside
-        if self.team=='R':
-            if ball_pos[1]<=-middle_line:
-                if player_pos[1]<ball_pos[1]:
-                    self.ISBACK=True
-            elif -middle_line<ball_pos[1]<middle_line:
-                k1=(goal_dis-ball_pos[1])/(bottom_line_width/2-ball_pos[0])
-                b1=ball_pos[1]-k1*ball_pos[0]
-                k2=(goal_dis-ball_pos[1])/(-bottom_line_width/2-ball_pos[0])
-                b2=ball_pos[1]-k2*ball_pos[0]
-                k3=(ball_pos[1]-player_pos[1])/(ball_pos[0]-player_pos[0])
-                b3=ball_pos[1]-k3*ball_pos[0]
-                if -bottom_line_width/2<(goal_dis-b3)/k3<bottom_line_width/2 and player_pos[1]<ball_pos[1]:
-                    self.ISBACK=True
-                elif k1*player_pos[0]+b1<player_pos[1] and k2*player_pos[0]+b2<player_pos[1]:
-                    turn_dir=random.randint(1,2)
-                else:
-                    turn_dir=0
-            elif ball_pos[1]>=middle_line:
-                k1=(goal_dis-ball_pos[1])/(goal_x_width/2-ball_pos[0])
-                b1=ball_pos[1]-k1*ball_pos[0]
-                k2=(goal_dis-ball_pos[1])/(-goal_x_width/2-ball_pos[0])
-                b2=ball_pos[1]-k2*ball_pos[0]
-                k3 = (ball_pos[1] - player_pos[1]) / (ball_pos[0] - player_pos[0])
-                b3 = ball_pos[1] - k3 * ball_pos[0]
-                if -goal_x_width/2<(goal_dis-b3)/k3<goal_x_width/2 and player_pos[1]<ball_pos[1]:
-                    self.ISBACK=True
-                elif k1*player_pos[0]+b1<player_pos[1] and k2*player_pos[0]+b2<player_pos[1]:
-                    turn_dir=random.randint(1,2)
-                else:
-                    turn_dir=0
-            elif self.team=='B':
-                if ball_pos[1] >= middle_line:
-                    if player_pos[1] > ball_pos[1]:
-                        self.ISBACK = True
-                elif -middle_line < ball_pos[1] < middle_line:
-                    k1 = (-goal_dis - ball_pos[1]) / (bottom_line_width / 2 - ball_pos[0])
-                    b1 = ball_pos[1] - k1 * ball_pos[0]
-                    k2 = (-goal_dis - ball_pos[1]) / (-bottom_line_width / 2 - ball_pos[0])
-                    b2 = ball_pos[1] - k2 * ball_pos[0]
-                    k3 = (ball_pos[1] - player_pos[1]) / (ball_pos[0] - player_pos[0])
-                    b3 = ball_pos[1] - k3 * ball_pos[0]
-                    if -bottom_line_width / 2 < (goal_dis - b3) / k3 < bottom_line_width / 2 and player_pos[1] > ball_pos[1]:
-                        self.ISBACK = True
-                    elif k1 * player_pos[0] + b1 > player_pos[1] and k2 * player_pos[0] + b2 > player_pos[1]:
-                        turn_dir = random.randint(1, 2)
-                    else:
-                        turn_dir = 0
-                elif ball_pos[1] <= -middle_line:
-                    k1 = (-goal_dis - ball_pos[1]) / (goal_x_width / 2 - ball_pos[0])
-                    b1 = ball_pos[1] - k1 * ball_pos[0]
-                    k2 = (-goal_dis - ball_pos[1]) / (-goal_x_width / 2 - ball_pos[0])
-                    b2 = ball_pos[1] - k2 * ball_pos[0]
-                    k3 = (ball_pos[1] - player_pos[1]) / (ball_pos[0] - player_pos[0])
-                    b3 = ball_pos[1] - k3 * ball_pos[0]
-                    if -goal_x_width / 2 < (goal_dis - b3) / k3 < goal_x_width / 2 and player_pos[1] > ball_pos[1]:
-                        self.ISBACK = True
-                    elif k1 * player_pos[0] + b1 > player_pos[1] and k2 * player_pos[0] + b2 > player_pos[1]:
-                        turn_dir = random.randint(1, 2)
-                    else:
-                        turn_dir = 0
-        return turn_dir
 
     def if_change_target(self,previous_pos,now_pos):
         self.CHANGE_TARGET=False
@@ -470,81 +389,6 @@ class Nao(Robot):
                 front_door=4
         return front_door
 
-    """cause jamming problem so don't use
-    def turn_certain_angle(self,angle):#Boyu Shi
-        #input angle in degree,+ ->anticlockwise(turnleft) - ->clockwise(turnright)
-        self.TURNING=True
-        init_face_dir=self.inertialUnit.getRollPitchYaw()
-        angle=angle*math.pi/180
-        unit_turn=60*math.pi/180
-        if(angle>0):
-            self.startMotion(self.turnLeft30)
-        else:
-            self.startMotion(self.turnRight30)
-        while(TURNING):
-            present_face_dir = self.inertialUnit.getRollPitchYaw()
-            temp = abs(present_face_dir[2] - init_face_dir[2])
-            if temp>=abs(angle):
-                TURNING=False
-                if self.currentlyPlaying:
-                    self.currentlyPlaying.stop()
-            if temp>=(unit_turn-0.1):
-                if(angle>0):
-                    angle=angle-unit_turn
-                    self.startMotion(self.turnLeft30)
-                    if(angle<0):
-                        angle=0
-                elif(angle<0):
-                    angle=angle+unit_turn
-                    self.startMotion(self.turnRight30)
-                    if(angle>0):
-                        angle=0
-                if(angle==0):
-                    TURNING = False
-                    if self.currentlyPlaying:
-                        self.currentlyPlaying.stop()
-        return
-
-    def move_certain_dis(self,dis):#Boyu Shi
-        move_ok=False
-        initpos=self.gps.getValues()
-        print(str(self.rob_name)+"start move")
-        while(not move_ok):
-            self.startMotion(self.move)
-            Pos = self.gps.getValues()
-            move_dis=math.sqrt((Pos[0]-initpos[0])**2+(Pos[1]-initpos[1])**2)
-            print(str(self.rob_name)+"already move:"+str(move_dis))
-            if move_dis>=dis:
-                move_ok=True
-        return
-
-    
-    def circle_turn(self, turn_dir,ballpos):#Boyu Shi
-        #Turn around the ball
-        self.startMotion(self.backwards)
-        print(str(self.rob_name)+"start backwards")
-        while(self.CATCH_BALL):
-            self.if_catch_ball(ballpos)
-        if turn_dir == 'r':
-            self.turn_certain_angle(-60)
-            self.move_certain_dis(0.2)
-        elif turn_dir == 'l':
-            self.turn_certain_angle(60)
-            self.move_certain_dis(0.2)
-        else:
-            print(str(self.rob_name)+"wrong input for circle turn")
-        return
-    """
-    """
-    def circle_turn(self, turn_dir):#Boyu Shi
-        if turn_dir == 'r':
-            self.startMotion(self.SideStepRight)
-        elif turn_dir == 'l':
-            self.startMotion(self.SideStepLeft)
-        else:
-            print(str(self.rob_name)+"wrong input for circle turn")
-        return
-    """
     def tuneLR(self,x_t,Pos,ifdive):
         if self.team=="R":
             if (math.fabs(x_t - Pos[0]) > 0.5):
@@ -631,9 +475,11 @@ while robot.step(timestep) != -1:
     if (robot.receive_meaasge()):
         ball_pos = robot.newest[8]
         Pos=robot.gps.getValues()
+        '''
         if(Pos[2]<0.2):
             robot.activate_motion='standup'
             robot.startMotion(robot.standup)
+        '''
         if(robot.activate_motion!=None):
             present_time=robot.getTime()
             delta_time=present_time-robot.motion_start_time
@@ -683,7 +529,7 @@ while robot.step(timestep) != -1:
                             if (robot.belong_team == 1):#if opposing player in possession of the ball,move to prepare to defend
                                 if (robot.newest[control_rob][1] > ball_pos[1]):
                                     x_t = robot.x_t_calculate(control_rob)
-                                    robot.tuneLR(x_t, Pos, 1)
+                                    robot.tuneLR(x_t, Pos, 0)
                                 else:
                                     robot.tuneLR(ball_pos[0], Pos, 0)
                             else:
@@ -692,7 +538,7 @@ while robot.step(timestep) != -1:
                             if (robot.belong_team == 0):
                                 if (robot.newest[control_rob][1] < ball_pos[1]):
                                     x_t = robot.x_t_calculate(control_rob)
-                                    robot.tuneLR(x_t, Pos, 1)
+                                    robot.tuneLR(x_t, Pos, 0)
                                 else:
                                     robot.tuneLR(ball_pos[0], Pos, 0)
                             else:
