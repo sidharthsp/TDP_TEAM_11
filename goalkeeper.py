@@ -199,7 +199,8 @@ class Nao(Robot):
         self.target_is=-1 #0-> target is ball, 1-> target is another point,-1->target need initialise
         self.set_motion_time_direc()#make the motion-cost time dictionaries
         self.dis=np.zeros(Robot_num*2)
-
+        self.truningangle = 10000
+        
     def getAngle(self, target_Pos, Pos, RollPitchYaw):#Ziyuan Liu
         #get the angle between robot's face direction and ball's postion
         delta_x = target_Pos[0] - Pos[0]
@@ -251,46 +252,49 @@ class Nao(Robot):
 
         return
 
-    def detectAngle(self, init_face_dir, angle):#Ziyuan Liu
-        #detect if rebot is directly face to the ball,if true stop turning around
+    def detectAngle(self, init_face_dir, taeget_pos):  # Ziyuan Liu
+        # detect if rebot is directly face to the ball,if true stop turning around
         while self.ISDETECTING:
-            print(str(self.rob_name)+"is detecting")
             present_face_dir = self.inertialUnit.getRollPitchYaw()
-            temp = abs(present_face_dir[2] - init_face_dir[2] - angle)
+            temp = abs(present_face_dir[2] - init_face_dir[2] - self.truningangle)
+            # print(str(self.rob_name) + "is detecting\n")
+            # print("temp:" + str(temp) + '\n')
             if temp < rad_robust:
                 if self.currentlyPlaying:
                     self.currentlyPlaying.stop()
-                    self.activate_motion=None
+                    self.activate_motion = None
                 self.ISDETECTING = False
-                self.DIR=True
-                print(str(self.rob_name)+"direction correct now")
-            return
+                self.DIR = True
+                print(str(self.rob_name) + "direction correct now")
+        return
 
-    def turnAround(self, taeget_pos):#Ziyuan Liu
-        #if rebot is not directly face to the ball start turning around
+    def turnAround(self, taeget_pos):  # Ziyuan Liu
+        # if rebot is not directly face to the ball start turning around
         Pos = self.gps.getValues()
         init_face_dir = self.inertialUnit.getRollPitchYaw()
-        angle = self.getAngle(taeget_pos, Pos, init_face_dir)
-        if abs(angle) >= rad_robust:
+        self.truningangle = self.getAngle(taeget_pos, Pos, init_face_dir)
+        if (abs(self.truningangle) >= rad_robust):
             if not self.ISDETECTING:
                 self.ISDETECTING = True
                 self.DIR = False
-                #print(str(self.rob_name)+"turnAround:" + str(robot.IFMOVE))
-                _thread.start_new_thread(self.detectAngle, (init_face_dir, angle))
-            if angle > rad_robust:
-                self.activate_motion='turnLeft30'
+                # print(str(self.rob_name)+"turnAround:" + str(robot.IFMOVE))
+                _thread.start_new_thread(self.detectAngle, (init_face_dir, taeget_pos))
+            if self.truningangle > rad_robust:
+                self.activate_motion = 'turnLeft30'
                 self.startMotion(self.turnLeft30)
             else:
-                self.activate_motion='turnRight30'
+                self.activate_motion = 'turnRight30'
                 self.startMotion(self.turnRight30)
+            init_face_dir = self.inertialUnit.getRollPitchYaw()
+            self.truningangle = self.getAngle(taeget_pos, Pos, init_face_dir)
         return
 
-    def turn_label(self, target_pos):#Ziyuan Liu
-        #start a new thread to check and change direction
+    def turn_label(self, target_pos):  # Ziyuan Liu
+        # start a new thread to check and change direction
         self.ISDETECTING = False
-        self.DIR=True
         _thread.start_new_thread(self.turnAround, (target_pos,))
-        #print(str(self.rob_name)+"turn_label:"+str(robot.IFMOVE))
+        # print(str(self.rob_name)+"turn_label:"+str(robot.IFMOVE))
+        return
 
     def if_catch_ball(self, ballPos):#Boyu Shi
         #check if robot is close enough to ball
@@ -422,6 +426,7 @@ class Nao(Robot):
                     self.startMotion(self.DiveRight)
         return
     def x_t_calculate(self,control_rob):
+        #to calculate the x-coordinate value at which the goalkeeper should go to defend
         if robot.newest[control_rob][0]==robot.newest[Robot_num*2][0]:
             x_t=robot.newest[control_rob][0]
         else:
