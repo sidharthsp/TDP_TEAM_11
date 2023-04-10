@@ -37,6 +37,10 @@ bottom_line_width = 6
 
 rad_robust = 0.25
 
+pitch_length=9
+
+Turn_around_x_width=0.2
+
 
 class Nao(Robot):
     # load motion files
@@ -45,8 +49,8 @@ class Nao(Robot):
         self.backwards = Motion('../../motions/Backwards.motion')
         self.SideStepLeft = Motion('../../motions/SideStepLeft.motion')
         self.SideStepRight = Motion('../../motions/SideStepRight.motion')
-        self.turnLeft30 = Motion('../../motions/TurnLeft30.motion')
-        self.turnRight30 = Motion('../../motions/TurnRight30.motion')
+        self.turnLeft30 = Motion('../../motions/TurnLeft60.motion')
+        self.turnRight30 = Motion('../../motions/TurnRight60.motion')
         self.shoot = Motion('../../motions/Shoot.motion')
         self.stand = Motion('../../motions/Stand.motion')
         self.standup = Motion('../../motions/StandUpFromFront.motion')
@@ -240,7 +244,7 @@ class Nao(Robot):
                     self.activate_motion = None
                 self.ISDETECTING = False
                 self.DIR = True
-                print(str(self.rob_name) + "direction correct now")
+                print(str(self.rob_name) + "direction correct now\n")
         return
 
 
@@ -282,22 +286,6 @@ class Nao(Robot):
             self.CATCH_BALL = False
         return
 
-    """not in use
-    def goal_dir(self):#Boyu Shi
-        #randmly choose a direction to shoot
-        xx = random.uniform(-goal_x_width / 2, goal_x_width / 2)
-        selfpos = self.gps.getValues()
-        if self.team == 'B':
-            target_pos = [xx, -goal_dis, 0]
-        elif self.team == 'R':
-            target_pos = [xx, goal_dis, 0]
-        else:
-            print(str(self.rob_name)+"Uncorrectly name the player:" + self.rob_name + "You need to set team name R or B first")
-            return -1
-        dir = self.getAngle(target_pos, selfpos, self.inertialUnit.getRollPitchYaw())
-        return dir
-    """
-
     def ifshoot(self, ballPos):  # Boyu Shi
         # check if the ball is in a suitable position to shoot
         self.IFSHOOT = False
@@ -316,20 +304,20 @@ class Nao(Robot):
     def isback(self, player_pos, ball_pos):  # Boyu Shi
         # check if robot,ball and goal are orderly in a line
         middle_line = 2.5
-        turn_dir = -1  # -1 isback 0 targe_tpoint is at the back of the ball 1 -x 2 +x 3 down/up
+        turn_dir = 0 # -1 isback 0 targe_tpoint is at the back of the ball 1 -x 2 +x 3 down/up
         if self.team == 'R':
             if ball_pos[1] <= -middle_line:
-                if player_pos[1] < ball_pos[1]:
+                if player_pos[1] <= ball_pos[1]-0.2:
                     turn_dir = -1
                 else:
-                    if ball_pos[0] - 0.5 < player_pos[0] <= ball_pos[0]:
+                    if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
                         turn_dir = 1
-                    elif ball_pos[0] < player_pos[0] < ball_pos[0] + 0.5:
+                    elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
                         turn_dir = 2
                     else:
                         turn_dir = 3
             elif -middle_line < ball_pos[1] < middle_line:
-                if player_pos[1] < ball_pos[1]:
+                if player_pos[1] <= ball_pos[1]-0.2:
                     if ball_pos[0] == player_pos[0]:
                         k3 = 0
                     else:
@@ -341,23 +329,23 @@ class Nao(Robot):
                         x_t = ball_pos[0]
                     if -bottom_line_width / 2 < x_t < bottom_line_width / 2:
                         turn_dir = -1
-                    elif x_t<-bottom_line_width/2:
-                        turn_dir = 2
-                    elif x_t>bottom_line_width/2:
+                    elif x_t<=-bottom_line_width/2:
                         turn_dir = 1
+                    elif x_t>=bottom_line_width/2:
+                        turn_dir = 2
 
                 else:
-                    if ball_pos[0] - 0.5 < player_pos[0] <= ball_pos[0]:
+                    if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
                         turn_dir = 1
-                    elif ball_pos[0] < player_pos[0] < ball_pos[0] + 0.5:
+                    elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
                         turn_dir = 2
                     else:
                         turn_dir = 3
 
             elif ball_pos[1] >= middle_line:
-                if player_pos[1] < ball_pos[1]:
+                if player_pos[1] <= ball_pos[1]-0.2:
                     if ball_pos[0] == player_pos[0]:
-                        k3 = 0
+                        k3 = -1
                     else:
                         k3 = (ball_pos[1] - player_pos[1]) / (ball_pos[0] - player_pos[0])
                     b3 = ball_pos[1] - k3 * ball_pos[0]
@@ -367,30 +355,30 @@ class Nao(Robot):
                         x_t = ball_pos[0]
                     if -goal_x_width / 2 < x_t < goal_x_width / 2:
                         turn_dir = -1
-                    elif x_t < -bottom_line_width / 2:
-                        turn_dir = 2
+                    elif x_t <= -goal_x_width / 2:
+                        turn_dir = 1
                     else:
-                        turn_dir = 1
+                        turn_dir = 2
                 else:
-                    if ball_pos[0] - 0.5 < player_pos[0] <= ball_pos[0]:
+                    if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
                         turn_dir = 1
-                    elif ball_pos[0] < player_pos[0] < ball_pos[0] + 0.5:
+                    elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
                         turn_dir = 2
                     else:
                         turn_dir = 3
             elif self.team == 'B':
                 if ball_pos[1] >= middle_line:
-                    if player_pos[1] > ball_pos[1]:
-                        self.ISBACK = True
+                    if player_pos[1] >= ball_pos[1]+0.2:
+                        turn_dir=-1
                     else:
-                        if ball_pos[0] - 0.5 < player_pos[0] <= ball_pos[0]:
+                        if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
                             turn_dir = 1
-                        elif ball_pos[0] < player_pos[0] < ball_pos[0] + 0.5:
+                        elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
                             turn_dir = 2
                         else:
                             turn_dir = 3
                 elif -middle_line < ball_pos[1] < middle_line:
-                    if player_pos[1] > ball_pos[1]:
+                    if player_pos[1] >= ball_pos[1]+0.2:
                         if ball_pos[0] == player_pos[0]:
                             k3 = 0
                         else:
@@ -401,21 +389,21 @@ class Nao(Robot):
                         else:
                             x_t = ball_pos[0]
                         if -bottom_line_width / 2 < x_t < bottom_line_width / 2:
-                            self.ISBACK = True
+                            turn_dir=-1
                         elif x_t < -bottom_line_width / 2:
                             turn_dir = 1
                         elif x_t > bottom_line_width / 2:
                             turn_dir = 2
                     else:
-                        if ball_pos[0] - 0.5 < player_pos[0] <= ball_pos[0]:
+                        if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
                             turn_dir = 1
-                        elif ball_pos[0] < player_pos[0] < ball_pos[0] + 0.5:
+                        elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
                             turn_dir = 2
                         else:
                             turn_dir = 3
 
                 elif ball_pos[1] <= -middle_line:
-                    if player_pos[1] > ball_pos[1]:
+                    if player_pos[1] >= ball_pos[1]+0.2:
                         if ball_pos[0] == player_pos[0]:
                             k3 = 0
                         else:
@@ -426,15 +414,15 @@ class Nao(Robot):
                         else:
                             x_t = ball_pos[0]
                         if -goal_x_width / 2 < x_t < goal_x_width / 2:
-                            self.ISBACK = True
-                        elif x_t < -bottom_line_width / 2:
+                            turn_dir=-1
+                        elif x_t < -goal_x_width / 2:
                             turn_dir = 1
-                        elif x_t > bottom_line_width / 2:
+                        elif x_t > goal_x_width / 2:
                             turn_dir = 2
                     else:
-                        if ball_pos[0] - 0.5 < player_pos[0] <= ball_pos[0]:
+                        if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
                             turn_dir = 1
-                        elif ball_pos[0] < player_pos[0] < ball_pos[0] + 0.5:
+                        elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
                             turn_dir = 2
                         else:
                             turn_dir = 3
@@ -455,10 +443,10 @@ class Nao(Robot):
                 str(self.rob_name) + "Uncorrectly name the player:" + self.rob_name + "You need to set team name R or B first")
             return -1
         #
-        if math.sqrt((ball_pos[0] - previous_pos[0]) ** 2 + (ball_pos[1] - previous_pos[1]) ** 2)>0.5:
+        if math.sqrt((ball_pos[0] - previous_pos[0]) ** 2 + (ball_pos[1] - previous_pos[1]) ** 2)>0.2:
             self.CHANGE_TARGET = True
         Pos = robot.gps.getValues()
-        if math.sqrt((Pos[0] - previous_pos[0]) ** 2 + (Pos[1] - previous_pos[1]) ** 2) < 0.2:
+        if math.sqrt((Pos[0] - previous_pos[0]) ** 2 + (Pos[1] - previous_pos[1]) ** 2) < 0.05:
             self.CHANGE_TARGET = True
         return self.CHANGE_TARGET
 
@@ -583,102 +571,118 @@ while robot.step(timestep) != -1:
                 robot.currentlyPlaying.stop()
                 robot.activate_motion = None
         if (robot.target_is == -1):
-            print("set target ballpos")
+            #print("set target ballpos")
             robot.target_is = 0
             robot.target_pos = ball_pos
         if (robot.if_change_target(robot.target_pos, ball_pos)):
-            print("change target\n")
+            #print("change target\n")
             ib = robot.isback(Pos, ball_pos)
-            print("ib:"+str(ib)+"\n")
+            #print("ib:"+str(ib)+"\n")
             if (ib==-1):
                 robot.target_is = 0
-                print(str(robot.rob_name) + 'target pos is ballpos\n')
+                #print(str(robot.rob_name) + 'target pos is ballpos\n')
                 robot.target_pos = ball_pos
             else:
                 robot.target_is = 1
                 if (ib == 0):
-                    print(str(robot.rob_name) + 'target pos is back ballpos\n')
+                    #print(str(robot.rob_name) + 'target pos is back ballpos\n')
                     if (robot.team == "R"):
                         if (Pos[1] > ball_pos[1] - 0.2):
                             robot.target_pos = [Pos[0], Pos[1] - 0.2]
                         else:
-                            robot.target_pos = [ball_pos[0], ball_pos[1] - 0.1]
+                            robot.target_pos = [ball_pos[0], ball_pos[1] - 0.2]
                     elif robot.team == "B":
                         if (Pos[1] < ball_pos[1] + 0.2):
                             robot.target_pos = [Pos[0], Pos[1] + 0.2]
                         else:
-                            robot.target_pos = [ball_pos[0], ball_pos[1] + 0.1]
+                            robot.target_pos = [ball_pos[0], ball_pos[1] + 0.2]
                 elif ib == 1:
-                    print(str(robot.rob_name) + 'target pos is left pos\n')
-                    robot.target_pos = [max(Pos[0] - 0.1, -bottom_line_width / 2), Pos[1]]
+                    #print(str(robot.rob_name) + 'target pos is left pos\n')
+                    robot.target_pos = [Pos[0] - 0.2, Pos[1]]
                 elif (ib == 2):
-                    print(str(robot.rob_name) + 'target pos is right pos\n')
-                    robot.target_pos = [min(Pos[0] + 0.1, bottom_line_width / 2), Pos[1]]
+                    #print(str(robot.rob_name) + 'target pos is right pos\n')
+                    robot.target_pos = [Pos[0] + 0.2, Pos[1]]
                 elif (ib == 3):
-                    print(str(robot.rob_name) + 'target pos is back pos\n')
+                    #print(str(robot.rob_name) + 'target pos is back pos\n')
                     if (robot.team == "R"):
-                        robot.target_pos = [Pos[0], Pos[1] - 1]
+                        robot.target_pos = [Pos[0], Pos[1] - 0.3]
                     elif (robot.team == "B"):
-                        robot.target_pos = [Pos[0], Pos[1] + 1]
+                        robot.target_pos = [Pos[0], Pos[1] + 0.3]
         print(str(robot.rob_name) + ":" + str(robot.target_pos) + '\n')
         player, dis = robot.if_obstacle()
         if (dis != -1):
-            robot.target_pos = robot.shortest_tangent(robot.newest[player])
-            print(str(robot.rob_name) + 'target pos change to avoid\n' + str(robot.target_pos))
-            robot.if_catch_ball(robot.newest[Robot_num * 2])
-            """
-            if (robot.CATCH_BALL):
-                if (robot.target_pos[0] < robot.gps.getValues()[0]):
-                    if (robot.team == "R"):
-                        robot.activate_motion = "SideStepRight"
-                        robot.startMotion(robot.SideStepRight)
-                    else:
-                        robot.activate_motion = "SideStepLeft"
-                        robot.startMotion(robot.SideStepLeft)
-                elif (robot.target_pos[0] > robot.gps.getValues()[0]):
-                    if (robot.team == "B"):
-                        robot.activate_motion = "SideStepRight"
-                        robot.startMotion(robot.SideStepRight)
-                    else:
-                        robot.activate_motion = "SideStepLeft"
-                        robot.startMotion(robot.SideStepLeft)
-            """
-            robot.activate_motion="shoot"
-            robot.startMotion(robot.shoot)
+            fight=0
+            if robot.team=='R':
+                if(player%2!=0):
+                    fight=1
+            elif robot.team=='B':
+                if(player%2!=1):
+                    fight=1
+            if(fight==0 or robot.target_is!=0):
+                robot.target_pos = robot.shortest_tangent(robot.newest[player])
+                print(str(robot.rob_name) + 'target pos change to avoid\n' + str(robot.target_pos))
+                robot.if_catch_ball(robot.newest[Robot_num * 2])
+                """
+                if (robot.CATCH_BALL):
+                    if (robot.target_pos[0] < robot.gps.getValues()[0]):
+                        if (robot.team == "R"):
+                            robot.activate_motion = "SideStepRight"
+                            robot.startMotion(robot.SideStepRight)
+                        else:
+                            robot.activate_motion = "SideStepLeft"
+                            robot.startMotion(robot.SideStepLeft)
+                    elif (robot.target_pos[0] > robot.gps.getValues()[0]):
+                        if (robot.team == "B"):
+                            robot.activate_motion = "SideStepRight"
+                            robot.startMotion(robot.SideStepRight)
+                        else:
+                            robot.activate_motion = "SideStepLeft"
+                            robot.startMotion(robot.SideStepLeft)
+                """
+                robot.activate_motion="shoot"
+                robot.startMotion(robot.shoot)
+        if robot.target_pos[0]>bottom_line_width/2+0.3:
+            robot.target_pos[0]=bottom_line_width / 2 + 0.3
+        elif robot.target_pos[0]<-bottom_line_width/2-0.3:
+            robot.target_pos[0] = -bottom_line_width / 2 - 0.3
+        if robot.target_pos[1]>pitch_length/2+0.3:
+            robot.target_pos[1] = pitch_length / 2 + 0.3
+        elif robot.target_pos[1]<-pitch_length/2-0.3:
+            robot.target_pos[1] = -pitch_length / 2 - 0.3
         present_face_dir = robot.inertialUnit.getRollPitchYaw()
         robot.if_dir(robot.target_pos, Pos, present_face_dir)
         if (robot.DIR):
-            print("face to the target\n")
+            #print("face to the target\n")
             robot.if_catch_ball(robot.target_pos)
             if (robot.target_is == 0):
                 if (robot.CATCH_BALL):
                     robot.target_is = -1
                     robot.ifshoot(ball_pos)
-                    print(str(robot.rob_name) +"catch ball\n")
+                    #print(str(robot.rob_name) +"catch ball\n")
                     if (robot.IFSHOOT):
-                        print(str(robot.rob_name) + "shoot\n")
+                        #print(str(robot.rob_name) + "shoot\n")
                         robot.activate_motion = "shoot"
                         robot.startMotion(robot.shoot)
                     else:
-                        print(str(robot.rob_name) + "bring ball forward\n")
+                        #print(str(robot.rob_name) + "bring ball forward\n")
                         robot.activate_motion = "move"
                         robot.startMotion(robot.move)
                 else:
-                    print(str(robot.rob_name) + "move to ball\n")
+                    #print(str(robot.rob_name) + "move to ball\n")
                     robot.activate_motion = "move"
                     robot.startMotion(robot.move)
             elif (robot.target_is == 1):
-                print(str(robot.rob_name) + "reach target\n")
-                print(robot.CATCH_BALL)
+                #print(str(robot.rob_name) + "reach target\n")
+                #print(robot.CATCH_BALL)
                 if (robot.CATCH_BALL):
-                    print("reset target pos")
+                    #print("reset target pos")
                     robot.target_is = -1
                 else:
-                    print(str(robot.rob_name) + "move to target\n")
+                    #print(str(robot.rob_name) + "move to target\n")
                     robot.activate_motion = "move"
                     robot.startMotion(robot.move)
         else:
-            print("turn to target\n")
+            #print("turn to target\n")
             robot.turn_label(robot.target_pos)
 
 """
