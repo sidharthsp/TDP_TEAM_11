@@ -279,7 +279,7 @@ class Nao(Robot):
                 self.DIR = False
                 # print(str(self.rob_name)+"turnAround:" + str(robot.IFMOVE))
                 _thread.start_new_thread(self.detectAngle, (init_face_dir, taeget_pos))
-            if self.truningangle > rad_robust:
+            if self.truningangle >= rad_robust:
                 self.activate_motion = 'turnLeft30'
                 self.startMotion(self.turnLeft30)
             else:
