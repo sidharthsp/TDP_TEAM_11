@@ -13,9 +13,14 @@ y_width=9
 goal_x_width = 2.6
 goal_y_width = 1
 goal_dis = 4.5
+stand_up_cost=3.7
 initial_pos = [[0, -4.4, 0.31], [0, 4.4, 0.31], [0.27, -0.87, 0.31], [-0.19, 0.39, 0.31],
                [-0.91, -2.27, 0.31], [0.91, 2.27, 0.31], [-1.57, -0.6, 0.31], [1.57, 0.6, 0.31],[0,0,0.0699224]]
 
+reset_robopos=[[0, -4.4, 0.31], [0, 4.4, 0.31],[3.1,-1.5,0.31],[3.1,1.5,0.31],
+           [3.1,-3,0.31],[3.1,3,0.31],[-3.1,-1.5,0.31],[-3.1,1.5,0.31]]
+
+time_limit=10#minutes,the length of time the match is to be played
 # create the Robot instance.
 class Judge(Supervisor):
     def set_score(self):
@@ -24,8 +29,9 @@ class Judge(Supervisor):
             ball_control="Blue"
         elif(robot.belong_team==2):
             ball_control="Red"
-        st="Red score:"+str(self.rscore)+"  Blue score:"+str(self.bscore)+"  Ball control: "+ball_control
-        self.setLabel( 0, st, 0.3, 0.01, 0.2, 0x000000)
+        time=self.getTime()
+        st="Red score:"+str(self.rscore)+"  Blue score:"+str(self.bscore)+"  Ball control: "+ball_control+" Time:"+str(round(time,2))
+        self.setLabel( 0, st, 0.1, 0.01, 0.15, 0x000000)#id, label, x, y, size, color, transparency, font
 
     def ballinitial(self):
         ball = self.getFromDef("ball")
@@ -39,15 +45,13 @@ class Judge(Supervisor):
         x, y, z = ball_pos
         if goal_x_width / 2 > x > -goal_x_width / 2:
             if -goal_dis > y > -goal_y_width - goal_dis and self.initialize_ball==0:
-                self.initialize_ball = 1
-                self.ballinitial()
                 self.bscore += 1
-            elif goal_dis < y < goal_y_width + goal_dis and self.initialize_ball==0:
                 self.initialize_ball = 1
                 self.ballinitial()
+            elif goal_dis < y < goal_y_width + goal_dis and self.initialize_ball==0:
                 self.rscore += 1
-            self.fall_down[0]=0
-            self.fall_down[1]=0
+                self.initialize_ball = 1
+                self.ballinitial()
         return
 
     def initial_robotlist(self):
@@ -60,13 +64,8 @@ class Judge(Supervisor):
             node = robot.getFromDef(self.robotlist[i])
             transl = node.getField("translation")
             transl.setSFVec3f(initial_pos[i])
-            for i in range(2):
-                node = robot.getFromDef(self.robotlist[i])
-                transl = node.getPosition()
-                if transl[2] < 0.2 and self.fall_down[i] == 0:
-                    self.getup(i, transl)
-                    self.fall_down[i] = 1
         return
+
     def sendmessage(self):
         ball = self.getFromDef("ball")
         ball_trans = ball.getPosition()
@@ -76,7 +75,7 @@ class Judge(Supervisor):
             transl = node.getPosition()
             for j in range(3):
                 temp.append(transl[j])
-            self.robo_ball_pos[math.floor(i/2)]=transl
+            self.robo_ball_pos[i]=transl
         for i in range(3):
             temp.append((ball_trans[i]))
         self.robo_ball_pos[Robot_num*2]=ball_trans
@@ -99,18 +98,25 @@ class Judge(Supervisor):
         elif rob%2==1:
             transl.setSFVec3f([pos[0], pos[1], 0.2])
             rotation.setSFRotation([0.578745, 0.583663, -0.569554, 2.07499])
+        self.start_standup[rob] = self.getTime()
         return
 
     def check_fall_down(self):
+        ball = self.getFromDef("ball")
+        ball_pos = ball.getPosition()
         for i in range(Robot_num*2):
             node = robot.getFromDef(self.robotlist[i])
             transl=node.getPosition()
+            time=self.getTime()-self.start_standup[i]
             if i>1:
-                if transl[2]<0.2 and self.fall_down[i]==0:
+                if transl[2]<0.2 and time>stand_up_cost:
                     self.getup(i,transl)
-                    self.fall_down[i]=1
-                elif transl[2]>0.3 and self.fall_down[i]==1:
-                    self.fall_down[i]=0
+            elif i==0:
+                if not(-goal_x_width/2<=ball_pos[0]<=goal_x_width/2 and -goal_dis<=ball_pos[1]<=-goal_dis+1) and transl[2]<0.2 and time>stand_up_cost:
+                    self.getup(i, transl)
+            else:
+                if not(-goal_x_width/2<=ball_pos[0]<=goal_x_width/2 and goal_dis-1<=ball_pos[1]<=goal_dis) and transl[2]<0.2 and time>stand_up_cost:
+                    self.getup(i,transl)
         return
 
     def check_belong(self):
@@ -156,6 +162,15 @@ class Judge(Supervisor):
         self.robo_ball_pos[Robot_num * 2]=ball_pos
         return
 
+    def check_out_of_pitch(self):
+        for i in range(Robot_num * 2):
+            node = robot.getFromDef(self.robotlist[i])
+            pos = node.getPosition()
+            if pos[0]<-3.2 or pos[0]>3.2 or pos[1]<-5 or pos[1]>5 or pos[2]<0:
+                self.changeRobopos(i,reset_robopos[i])
+        return
+
+
     def __init__(self):
         super().__init__()
         self.rscore = 0
@@ -163,8 +178,8 @@ class Judge(Supervisor):
         self.robotlist = []
         self.robo_ball_pos=initial_pos
         self.belong_team=0 #0->no team 1->blue 2->red
-        self.fall_down=np.zeros(Robot_num*2)
-        self.initialize_ball=0
+        self.initialize_ball=0#Set 1 after scoring until the ball returns to midpoint and then set 0 to prevent repeated scoring due to delay
+        self.start_standup=np.zeros(Robot_num*2)
 
 
 robot = Judge()
@@ -188,11 +203,15 @@ robot.ballinitial()
 robot.initial_robotlist()
 robot.robot_initial()
 while robot.step(timestep) != -1:
-    robot.check_goal()
-    robot.check_out_of_bounds()
-    robot.check_belong()
-    robot.set_score()
-    robot.check_fall_down()
-    robot.sendmessage()
-
+    time=robot.getTime()
+    if(time<60*time_limit):
+        robot.sendmessage()
+        robot.check_goal()
+        robot.check_out_of_bounds()
+        robot.check_belong()
+        robot.set_score()
+        robot.check_fall_down()
+        robot.check_out_of_pitch()
+    else:
+        robot.setLabel( 0, "GAME IS OVER", 0.1, 0.01, 0.15, 0x000000)
 # Enter here exit cleanup code.
