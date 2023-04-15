@@ -200,7 +200,7 @@ class Nao(Robot):
         self.set_motion_time_direc()#make the motion-cost time dictionaries
         self.dis=np.zeros(Robot_num*2)
         self.truningangle = 10000
-        
+
     def getAngle(self, target_Pos, Pos, RollPitchYaw):#Ziyuan Liu
         #get the angle between robot's face direction and ball's postion
         delta_x = target_Pos[0] - Pos[0]
@@ -279,7 +279,7 @@ class Nao(Robot):
                 self.DIR = False
                 # print(str(self.rob_name)+"turnAround:" + str(robot.IFMOVE))
                 _thread.start_new_thread(self.detectAngle, (init_face_dir, taeget_pos))
-            if self.truningangle >= rad_robust:
+            if self.truningangle > rad_robust:
                 self.activate_motion = 'turnLeft30'
                 self.startMotion(self.turnLeft30)
             else:
@@ -480,7 +480,6 @@ while robot.step(timestep) != -1:
     if (robot.receive_meaasge()):
         ball_pos = robot.newest[8]
         Pos=robot.gps.getValues()
-
         if(Pos[2]<0.2):
             robot.activate_motion='standup'
             robot.startMotion(robot.standup)
@@ -506,11 +505,12 @@ while robot.step(timestep) != -1:
             move_dir=robot.if_front_door()
             if(move_dir==0):#if robot is in front of door
                 control_rob = robot.check_belong()
-                if(robot.in_goal_area()):#if robot is in the goal area
+                if(robot.in_goal_area()):#if ball is in the goal area
                     if(control_rob!=-1):#if someone control the ball
                         if(robot.team=='R'):
                             if(robot.belong_team==1):#if opposing player in possession of the ball, move to the corresponding position and pounce
-                                if(robot.newest[control_rob][1]>ball_pos[1]):
+                                if(robot.newest[control_rob][1]>ball_pos[1] and ball_pos[1]<-goal_dis+goal_y_width):
+                                    print("prepare to dive")
                                     x_t=robot.x_t_calculate(control_rob)
                                     robot.tuneLR(x_t,Pos,1)
                                 else:
@@ -519,7 +519,8 @@ while robot.step(timestep) != -1:
                                 robot.tuneLR(ball_pos[0],Pos,0)
                         elif(robot.team=='B'):
                             if (robot.belong_team == 0):
-                                if (robot.newest[control_rob][1] < ball_pos[1]):
+                                if (robot.newest[control_rob][1] < ball_pos[1] and ball_pos[1]>-goal_y_width+goal_dis):
+                                    print("prepare to dive")
                                     x_t = robot.x_t_calculate(control_rob)
                                     robot.tuneLR(x_t, Pos, 1)
                                 else:
@@ -563,6 +564,10 @@ while robot.step(timestep) != -1:
                 elif move_dir==4:
                     robot.activate_motion = "backwards"
                     robot.startMotion(robot.backwards)
+            dis = math.sqrt((Pos[0] - ball_pos[0]) ** 2 + (Pos[1] - ball_pos[1]) ** 2)
+            if(dis<0.2):
+                robot.activate_motion="shoot"
+                robot.startMotion(robot.shoot)
         else:#if goalkeeper don't face to the pitch
             robot.turn_label(robot.target_pos)
 
