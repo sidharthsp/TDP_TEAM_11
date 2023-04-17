@@ -60,7 +60,7 @@ class Judge(Supervisor):
             self.robotlist.append("R" + str(i))
             self.robotlist.append("B" + str(i))
         return
-    def robot_initial(self):
+    def robot_initial(self):#Boyu Shi
         for i in range(Robot_num * 2):
             node = robot.getFromDef(self.robotlist[i])
             transl = node.getField("translation")
