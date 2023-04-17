@@ -1,7 +1,7 @@
 """main controller."""
-# Author:Boyu Shi
+# Author:TDP_TEAM_11
 #
-# Copyright 2023 Boyu Shi
+# Copyright 2023 TDP_TEAM_11
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -576,7 +576,6 @@ initial_robotlist()
 # Main loop:
 # - perform simulation steps until Webots is stopping the controller
 
-# main written by Boyu Shi
 robot.target_pos = robot.gps.getValues()
 robot.stand.play()
 
