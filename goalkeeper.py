@@ -1,7 +1,7 @@
 """main controller."""
-# Author:TDP_TEAM_11
+# Author:Boyu Shi
 #
-# Copyright 2023 TDP_TEAM_11
+# Copyright 2023 Boyu Shi
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ class Nao(Robot):
         self.leds[5].set(rgb & 0xFF)
         self.leds[6].set(rgb & 0xFF)
 
-    def findAndEnableDevices(self):
+    def findAndEnableDevices(self):#Arpan Gupta
         # get the time step of the current world.
         self.timeStep = int(self.getBasicTimeStep())
 
@@ -128,7 +128,7 @@ class Nao(Robot):
         self.inertialUnit = self.getDevice(self.getName() + "IU")
         self.inertialUnit.enable(self.timeStep)
 
-    def receive_meaasge(self):#Boyu Shi
+    def receive_meaasge(self):#Sidharth Sreeja Prashanth
         #get the message from supervisor“Judge”
         flag = 0
         if (self.receiver.getQueueLength() > 0):
@@ -149,7 +149,8 @@ class Nao(Robot):
             self.receiver.nextPacket()
         return flag
 
-    def count_dis(self):
+    def count_dis(self):#Krishna Rajendran
+        #get distance to different teamates
         pos=self.gps.getValues()
         for i in range(Robot_num*2):
             if(robotlist[i]!=self.rob_name):
@@ -157,7 +158,8 @@ class Nao(Robot):
             else:
                 self.dis[i]=0
         return
-    def nearest_teammate(self):
+
+    def nearest_teammate(self):#Krishna Rajendran
         bias=0
         if(self.team=='B'):
             bias=1
@@ -225,7 +227,7 @@ class Nao(Robot):
 
         return Angle
 
-    def if_dir(self,target_Pos, Pos, RollPitchYaw):#Ziyuan Liu,Boyu Shi
+    def if_dir(self,target_Pos, Pos, RollPitchYaw):#Ziyuan Liu
         #check if robot is directly face to the target position
         self.DIR=False
         delta_x = target_Pos[0] - Pos[0]
@@ -296,7 +298,7 @@ class Nao(Robot):
         # print(str(self.rob_name)+"turn_label:"+str(robot.IFMOVE))
         return
 
-    def if_catch_ball(self, ballPos):#Boyu Shi
+    def if_catch_ball(self, ballPos):# Yu Li
         #check if robot is close enough to ball
         Pos = self.gps.getValues()
         ball_dis = math.sqrt((ballPos[0] - Pos[0]) ** 2 + (ballPos[1] - Pos[1]) ** 2)
@@ -306,7 +308,7 @@ class Nao(Robot):
             self.CATCH_BALL = False
         return
 
-    def ifshoot(self, ballPos):#Boyu Shi
+    def ifshoot(self, ballPos):# Sidharth Sreeja Prashanth
         #check if the ball is in a suitable position to shoot
         self.IFSHOOT = False
         if self.team == 'R':
@@ -320,7 +322,7 @@ class Nao(Robot):
             return -1
         return
 
-    def if_change_target(self,previous_pos,now_pos):
+    def if_change_target(self,previous_pos,now_pos):#Arpan Gupta
         self.CHANGE_TARGET=False
         if self.team == 'B':
             if previous_pos[1]>now_pos[1]:
@@ -336,7 +338,9 @@ class Nao(Robot):
             self.CHANGE_TARGET=True
         return self.CHANGE_TARGET
 
-    def check_belong(self):#belong_team 1->blue 2->red
+    def check_belong(self):#Krishna Rajendran
+        #check which side control the ball
+        #belong_team 1->blue 2->red
         ball_pos = self.newest[2 * Robot_num]
         blue_control = 0
         red_control = 0
@@ -360,7 +364,8 @@ class Nao(Robot):
             control_rob=-1
         return control_rob
 
-    def in_goal_area(self):
+    def in_goal_area(self):#Ziyuan Liu
+        #check if there is a goal
         in_goal_area=False
         if robot.team=='R':
             if -goal_x_width/2<=self.newest[Robot_num*2][0]<=goal_x_width/2 and -goal_dis<=self.newest[Robot_num*2][1]<=-goal_dis+1:
@@ -370,7 +375,8 @@ class Nao(Robot):
                 in_goal_area=True
         return in_goal_area
 
-    def if_front_door(self):
+    def if_front_door(self):# Yu Li
+        #check if the goalkeeper is standing in front of the door
         front_door=0#1 step_left 2 step_right 3 step_forward 4 step_back
         pos=self.gps.getValues()
         if robot.team=='R':
@@ -393,7 +399,8 @@ class Nao(Robot):
                 front_door=4
         return front_door
 
-    def tuneLR(self,x_t,Pos,ifdive):
+    def tuneLR(self,x_t,Pos,ifdive):#Yu Li
+        #determain what should the goalkeeper do according to the calculated x_coordinate
         if self.team=="R":
             if (math.fabs(x_t - Pos[0]) > 0.5):
                 if (x_t < Pos[0] and Pos[0]> -swerve_x_pos):
@@ -425,7 +432,8 @@ class Nao(Robot):
                     self.activate_motion = "DiveRight"
                     self.startMotion(self.DiveRight)
         return
-    def x_t_calculate(self,control_rob):
+
+    def x_t_calculate(self,control_rob):#Yu Li
         #to calculate the x-coordinate value at which the goalkeeper should go to defend
         if robot.newest[control_rob][0]==robot.newest[Robot_num*2][0]:
             x_t=robot.newest[control_rob][0]
@@ -473,7 +481,7 @@ initial_robotlist()
 # Main loop:
 # - perform simulation steps until Webots is stopping the controller
 
-#main written by Boyu Shi
+#Boyu Shi,Krishna Rajendran, Sidharth Sreeja Prashanth,Arpan Gupta, Ziyuan Liu, Yu Li
 robot.target_pos=robot.gps.getValues()
 robot.stand.play()
 while robot.step(timestep) != -1:
