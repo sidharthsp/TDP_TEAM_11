@@ -28,18 +28,18 @@ import time
 
 Robot_num = 4
 
-R_robot = 0.2
+R_robot = 0.35
 
 goal_x_width = 2.6
 goal_y_width = 1
 goal_dis = 4.5
 bottom_line_width = 6
 
-rad_robust = 0.25
+rad_robust = 0.2
 
 pitch_length=9
 
-Turn_around_x_width=0.2
+Turn_around_x_width=0.3
 
 
 class Nao(Robot):
@@ -54,6 +54,8 @@ class Nao(Robot):
         self.shoot = Motion('../../motions/Shoot.motion')
         self.stand = Motion('../../motions/Stand.motion')
         self.standup = Motion('../../motions/StandUpFromFront.motion')
+        self.SideStepLeft1 = Motion('../../motions/SideStepLeft1.motion')
+        self.SideStepRight1 = Motion('../../motions/SideStepRight1.motion')
 
     def set_motion_time_direc(self):
         self.motion_time_direc = {
@@ -89,7 +91,7 @@ class Nao(Robot):
         self.leds[5].set(rgb & 0xFF)
         self.leds[6].set(rgb & 0xFF)
 
-    def findAndEnableDevices(self):
+    def findAndEnableDevices(self):#Arpan Gupta
         # get the time step of the current world.
         self.timeStep = int(self.getBasicTimeStep())
 
@@ -125,11 +127,18 @@ class Nao(Robot):
         self.gps = self.getDevice(self.getName() + "gps")
         self.gps.enable(self.timeStep)
 
+
         # inertial unit
         self.inertialUnit = self.getDevice(self.getName() + "IU")
         self.inertialUnit.enable(self.timeStep)
 
-    def receive_message(self):  # Boyu Shi
+        self.us = []
+        usNames = ['Sonar/Left', 'Sonar/Right']
+        for i in range(0, len(usNames)):
+            self.us.append(self.getDevice(usNames[i]))
+            self.us[i].enable(self.timeStep)
+
+    def receive_message(self):  # Boyu Shi, Sidharth Sreeja Prashanth
         # get the message from supervisor“Judge”
         flag = 0
         if (self.receiver.getQueueLength() > 0):
@@ -201,7 +210,7 @@ class Nao(Robot):
 
         return Angle
 
-    def if_dir(self, target_Pos, Pos, RollPitchYaw):  # Ziyuan Liu,Boyu Shi
+    def if_dir(self, target_Pos, Pos, RollPitchYaw):  # Ziyuan Liu
         # check if robot is directly face to the target position
         self.DIR = False
         delta_x = target_Pos[0] - Pos[0]
@@ -273,10 +282,9 @@ class Nao(Robot):
         # start a new thread to check and change direction
         self.ISDETECTING = False
         _thread.start_new_thread(self.turnAround, (target_pos,))
-        # print(str(self.rob_name)+"turn_label:"+str(robot.IFMOVE))
         return
 
-    def if_catch_ball(self, ballPos):  # Boyu Shi
+    def if_catch_ball(self, ballPos):  # Yu Li
         # check if robot is close enough to ball
         Pos = self.gps.getValues()
         ball_dis = math.sqrt((ballPos[0] - Pos[0]) ** 2 + (ballPos[1] - Pos[1]) ** 2)
@@ -286,7 +294,7 @@ class Nao(Robot):
             self.CATCH_BALL = False
         return
 
-    def ifshoot(self, ballPos):  # Boyu Shi
+    def ifshoot(self, ballPos):  # Sidharth Sreeja Prashanth
         # check if the ball is in a suitable position to shoot
         self.IFSHOOT = False
         if self.team == 'R':
@@ -366,72 +374,73 @@ class Nao(Robot):
                         turn_dir = 2
                     else:
                         turn_dir = 3
-            elif self.team == 'B':
-                if ball_pos[1] >= middle_line:
-                    if player_pos[1] >= ball_pos[1]+0.2:
+        elif self.team == 'B':
+            if ball_pos[1] >= middle_line:
+                if player_pos[1] >= ball_pos[1]+0.2:
+                    turn_dir=-1
+                else:
+                    if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
+                        turn_dir = 1
+                    elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
+                        turn_dir = 2
+                    else:
+                        turn_dir = 3
+            elif -middle_line < ball_pos[1] < middle_line:
+                if player_pos[1] >= ball_pos[1]+0.2:
+                    if ball_pos[0] == player_pos[0]:
+                        k3 = 0
+                    else:
+                        k3 = (ball_pos[1] - player_pos[1]) / (ball_pos[0] - player_pos[0])
+                    b3 = ball_pos[1] - k3 * ball_pos[0]
+                    if k3 != 0:
+                        x_t = (-goal_dis - b3) / k3
+                    else:
+                        x_t = ball_pos[0]
+                    if -bottom_line_width / 2 < x_t < bottom_line_width / 2:
                         turn_dir=-1
+                    elif x_t < -bottom_line_width / 2:
+                        turn_dir = 1
+                    elif x_t > bottom_line_width / 2:
+                        turn_dir = 2
+                else:
+                    if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
+                        turn_dir = 1
+                    elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
+                        turn_dir = 2
                     else:
-                        if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
-                            turn_dir = 1
-                        elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
-                            turn_dir = 2
-                        else:
-                            turn_dir = 3
-                elif -middle_line < ball_pos[1] < middle_line:
-                    if player_pos[1] >= ball_pos[1]+0.2:
-                        if ball_pos[0] == player_pos[0]:
-                            k3 = 0
-                        else:
-                            k3 = (ball_pos[1] - player_pos[1]) / (ball_pos[0] - player_pos[0])
-                        b3 = ball_pos[1] - k3 * ball_pos[0]
-                        if k3 != 0:
-                            x_t = (goal_dis - b3) / k3
-                        else:
-                            x_t = ball_pos[0]
-                        if -bottom_line_width / 2 < x_t < bottom_line_width / 2:
-                            turn_dir=-1
-                        elif x_t < -bottom_line_width / 2:
-                            turn_dir = 1
-                        elif x_t > bottom_line_width / 2:
-                            turn_dir = 2
-                    else:
-                        if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
-                            turn_dir = 1
-                        elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
-                            turn_dir = 2
-                        else:
-                            turn_dir = 3
+                        turn_dir = 3
 
-                elif ball_pos[1] <= -middle_line:
-                    if player_pos[1] >= ball_pos[1]+0.2:
-                        if ball_pos[0] == player_pos[0]:
-                            k3 = 0
-                        else:
-                            k3 = (ball_pos[1] - player_pos[1]) / (ball_pos[0] - player_pos[0])
-                        b3 = ball_pos[1] - k3 * ball_pos[0]
-                        if k3 != 0:
-                            x_t = (goal_dis - b3) / k3
-                        else:
-                            x_t = ball_pos[0]
-                        if -goal_x_width / 2 < x_t < goal_x_width / 2:
-                            turn_dir=-1
-                        elif x_t < -goal_x_width / 2:
-                            turn_dir = 1
-                        elif x_t > goal_x_width / 2:
-                            turn_dir = 2
+            elif ball_pos[1] <= -middle_line:
+                if player_pos[1] >= ball_pos[1]+0.2:
+                    if ball_pos[0] == player_pos[0]:
+                        k3 = 0
                     else:
-                        if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
-                            turn_dir = 1
-                        elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
-                            turn_dir = 2
-                        else:
-                            turn_dir = 3
+                        k3 = (ball_pos[1] - player_pos[1]) / (ball_pos[0] - player_pos[0])
+                    b3 = ball_pos[1] - k3 * ball_pos[0]
+                    if k3 != 0:
+                        x_t = (-goal_dis - b3) / k3
+                    else:
+                        x_t = ball_pos[0]
+                    if -goal_x_width / 2 < x_t < goal_x_width / 2:
+                        turn_dir=-1
+                    elif x_t < -goal_x_width / 2:
+                        turn_dir = 1
+                    elif x_t > goal_x_width / 2:
+                        turn_dir = 2
+                else:
+                    if ball_pos[0] - Turn_around_x_width < player_pos[0] <= ball_pos[0]:
+                        turn_dir = 1
+                    elif ball_pos[0] < player_pos[0] < ball_pos[0] + Turn_around_x_width:
+                        turn_dir = 2
+                    else:
+                        turn_dir = 3
         return turn_dir
 
-    def if_change_target(self, previous_pos, ball_pos):#Boyu Shi
+    def if_change_target(self, previous_pos, ball_pos):#Arpan Gupta
         #If the robot's original target position is closer to itself in the direction of attack,
         # then change the target point, as it no longer needs to go around the back
         self.CHANGE_TARGET = False
+        pos=self.gps.getValues()
         if self.team == 'B':
             if previous_pos[1] > ball_pos[1]:
                 self.CHANGE_TARGET = True
@@ -443,14 +452,15 @@ class Nao(Robot):
                 str(self.rob_name) + "Uncorrectly name the player:" + self.rob_name + "You need to set team name R or B first")
             return -1
         #
-        if math.sqrt((ball_pos[0] - previous_pos[0]) ** 2 + (ball_pos[1] - previous_pos[1]) ** 2)>0.2:
+        if math.sqrt((ball_pos[0] - previous_pos[0]) ** 2 + (ball_pos[1] - previous_pos[1]) ** 2)>0.4:
             self.CHANGE_TARGET = True
         Pos = robot.gps.getValues()
-        if math.sqrt((Pos[0] - previous_pos[0]) ** 2 + (Pos[1] - previous_pos[1]) ** 2) < 0.05:
+        if math.sqrt((Pos[0] - previous_pos[0]) ** 2 + (Pos[1] - previous_pos[1]) ** 2) < 0.04:
             self.CHANGE_TARGET = True
         return self.CHANGE_TARGET
 
-    def point_to_line_distance(self, point, line_point1, line_point2):  # Liu Ziyuan
+    def point_to_line_distance(self, point, line_point1, line_point2):  # Yu Li
+        #calculate the distance between a point to a straight line
         if line_point1 == line_point2:
             point_array = np.array(point)
             point1_array = np.array(line_point1)
@@ -462,12 +472,14 @@ class Nao(Robot):
             distance = np.abs(A * point[0] + B * point[1] + C) / (np.sqrt(A ** 2 + B ** 2))
         return distance
 
-    def point_line_side(self, point, line_point1, line_point2):
+    def point_line_side(self, point, line_point1, line_point2):# Arpan Gupta
         tmp = (line_point1[1] - line_point2[1]) * point[0] + (line_point2[0] - line_point1[0]) * point[1] + line_point1[
             0] * line_point2[1] - line_point2[0] * line_point1[1]
         return tmp
 
-    def if_obstacle(self):
+    def if_obstacle(self):#Ziyuan Liu
+        #to determain will other robots be an obstacle and return the closest one
+        #with the distance to it
         self_pos = self.gps.getValues()
         target_pos = self.target_pos
         self.obstacle = np.zeros(8)
@@ -503,38 +515,53 @@ class Nao(Robot):
 
         return closest_player, closest_dis
 
-    def shortest_tangent(self, obstacle):  # Liu Ziyuan
-        Pos = self.gps.getValues()
+    def avoid(self): #Krishna Rajendran
+        if self.us[0].getValue() > 0.5 and self.us[1].getValue() > 0.5:
+            robot.activate_motion = "move"
+            robot.startMotion(robot.move)
+        else:
+            while self.us[0].getValue() < 0.5:
+                print(self.us[0].getValue())
+                self.activate_motion = 'SideStepRight'
+                self.startMotion(self.SideStepRight)
+            while self.us[1].getValue() < 0.5:
+                print(self.us[1].getValue())
+                self.activate_motion = 'SideStepLeft'
+                self.startMotion(self.SideStepLeft)
+
+
+    def shortest_tangent(self, Pos, obstacle):  # Liu Ziyuan
+        tangent_A_world = [0,0]
+        tangent_B_world = [0,0]
         obstacle[0] = obstacle[0] - Pos[0]
         obstacle[1] = obstacle[1] - Pos[1]
         if (math.sqrt(pow(obstacle[0], 2) + pow(obstacle[1], 2))) <= R_robot:
-            return Pos
+            return [100,100]
         else:
-            K_ra = ((obstacle[0] * obstacle[1]) + (
-                    R_robot * math.sqrt(pow(obstacle[0], 2) + pow(obstacle[1], 2) - pow(R_robot, 2)))) / (
+            K_ra = ((obstacle[0] * obstacle[1]) + (R_robot * math.sqrt(pow(obstacle[0], 2) + pow(obstacle[1], 2) - pow(R_robot, 2)))) / (
                            pow(obstacle[0], 2) - pow(R_robot, 2))
-            K_rb = ((obstacle[0] * obstacle[1]) - (
-                    R_robot * math.sqrt(pow(obstacle[0], 2) + pow(obstacle[1], 2) - pow(R_robot, 2)))) / (
+            K_rb = ((obstacle[0] * obstacle[1]) - (R_robot * math.sqrt(pow(obstacle[0], 2) + pow(obstacle[1], 2) - pow(R_robot, 2)))) / (
                            pow(obstacle[0], 2) - pow(R_robot, 2))
-            tangent_A = [(obstacle[0] + K_ra * obstacle[1]) / 1 + pow(K_ra, 2),
-                         ((obstacle[0] + K_ra * obstacle[1]) / 1 + pow(K_ra, 2) * K_ra)]
-            tangent_B = [(obstacle[0] + K_rb * obstacle[1]) / 1 + pow(K_rb, 2),
-                         ((obstacle[0] + K_rb * obstacle[1]) / 1 + pow(K_rb, 2) * K_rb)]
-            delta_OAx = tangent_A[0] - Pos[0]
-            delta_OAy = tangent_A[1] - Pos[1]
-            dis_OA = math.sqrt(pow(delta_OAx, 2) + pow(delta_OAy, 2))
-            delta_OBx = tangent_B[0] - Pos[0]
-            delta_OBy = tangent_B[1] - Pos[1]
-            dis_OB = math.sqrt(pow(delta_OBx, 2) + pow(delta_OBy, 2))
-            if dis_OA > dis_OB:
-                return tangent_B
+            tangent_A = [(obstacle[0] + K_ra * obstacle[1]) / (1 + pow(K_ra, 2)),
+                         ((obstacle[0] + K_ra * obstacle[1]) / (1 + pow(K_ra, 2))) * K_ra]
+            tangent_A_world[0] = tangent_A[0] + Pos[0]
+            tangent_A_world[1] = tangent_A[1] + Pos[1]
+            tangent_B = [(obstacle[0] + K_rb * obstacle[1]) / (1 + pow(K_rb, 2)),
+                         ((obstacle[0] + K_rb * obstacle[1]) / (1 + pow(K_rb, 2))) * K_rb]
+            tangent_B_world[0] = tangent_B[0] + Pos[0]
+            tangent_B_world[1] = tangent_B[1] + Pos[1]
+            if tangent_A[0] >= tangent_B[0]:
+                print("tangent_B" + '\n')
+                return tangent_B_world
+
             else:
-                return tangent_A
+                print("tangent_A" + '\n')
+                return tangent_A_world
+
 
 robot = Nao()
 
 robotlist = []
-
 
 def initial_robotlist():  # Boyu Shi
     # list name of robots
@@ -553,7 +580,7 @@ initial_robotlist()
 robot.target_pos = robot.gps.getValues()
 robot.stand.play()
 
-while robot.step(timestep) != -1:
+while robot.step(timestep) != -1:#Boyu Shi,Krishna Rajendran, Sidharth Sreeja Prashanth,Arpan Gupta, Ziyuan Liu, Yu Li
     if (robot.receive_message()):
         ball_pos = robot.newest[8]
         Pos = robot.gps.getValues()
@@ -574,10 +601,10 @@ while robot.step(timestep) != -1:
             #print("set target ballpos")
             robot.target_is = 0
             robot.target_pos = ball_pos
-        if (robot.if_change_target(robot.target_pos, ball_pos)):
+        ib = robot.isback(Pos, ball_pos)
+        print("ib:" + str(ib) + "\n")
+        if (robot.if_change_target(robot.target_pos, ball_pos) or ib==2 or ib==3 or ib==1):
             #print("change target\n")
-            ib = robot.isback(Pos, ball_pos)
-            #print("ib:"+str(ib)+"\n")
             if (ib==-1):
                 robot.target_is = 0
                 #print(str(robot.rob_name) + 'target pos is ballpos\n')
@@ -587,28 +614,28 @@ while robot.step(timestep) != -1:
                 if (ib == 0):
                     #print(str(robot.rob_name) + 'target pos is back ballpos\n')
                     if (robot.team == "R"):
-                        if (Pos[1] > ball_pos[1] - 0.2):
+                        if (Pos[1] > ball_pos[1] - 0.1):
                             robot.target_pos = [Pos[0], Pos[1] - 0.2]
                         else:
-                            robot.target_pos = [ball_pos[0], ball_pos[1] - 0.2]
+                            robot.target_pos = [ball_pos[0], ball_pos[1] - 0.08]
                     elif robot.team == "B":
-                        if (Pos[1] < ball_pos[1] + 0.2):
+                        if (Pos[1] < ball_pos[1] + 0.1):
                             robot.target_pos = [Pos[0], Pos[1] + 0.2]
                         else:
-                            robot.target_pos = [ball_pos[0], ball_pos[1] + 0.2]
+                            robot.target_pos = [ball_pos[0], ball_pos[1] + 0.08]
                 elif ib == 1:
-                    #print(str(robot.rob_name) + 'target pos is left pos\n')
-                    robot.target_pos = [Pos[0] - 0.2, Pos[1]]
+                    #print(str(robot.rob_name) + 'target pos is -x pos\n')
+                    robot.target_pos = [Pos[0] - 0.3, Pos[1]]
                 elif (ib == 2):
-                    #print(str(robot.rob_name) + 'target pos is right pos\n')
-                    robot.target_pos = [Pos[0] + 0.2, Pos[1]]
+                    #print(str(robot.rob_name) + 'target pos is +x pos\n')
+                    robot.target_pos = [Pos[0] + 0.3, Pos[1]]
                 elif (ib == 3):
                     #print(str(robot.rob_name) + 'target pos is back pos\n')
                     if (robot.team == "R"):
                         robot.target_pos = [Pos[0], Pos[1] - 0.3]
                     elif (robot.team == "B"):
                         robot.target_pos = [Pos[0], Pos[1] + 0.3]
-        print(str(robot.rob_name) + ":" + str(robot.target_pos) + '\n')
+        #print(str(robot.rob_name) + ":" + str(robot.target_pos) + '\n')
         player, dis = robot.if_obstacle()
         if (dis != -1):
             fight=0
@@ -619,7 +646,10 @@ while robot.step(timestep) != -1:
                 if(player%2!=1):
                     fight=1
             if(fight==0 or robot.target_is!=0):
-                robot.target_pos = robot.shortest_tangent(robot.newest[player])
+                robot.target_pos = robot.shortest_tangent(Pos, robot.newest[player])
+                if robot.target_pos == [100, 100]:
+                    robot.avoid()
+                    continue
                 print(str(robot.rob_name) + 'target pos change to avoid\n' + str(robot.target_pos))
                 robot.if_catch_ball(robot.newest[Robot_num * 2])
                 """
@@ -650,6 +680,7 @@ while robot.step(timestep) != -1:
         elif robot.target_pos[1]<-pitch_length/2-0.3:
             robot.target_pos[1] = -pitch_length / 2 - 0.3
         present_face_dir = robot.inertialUnit.getRollPitchYaw()
+        print(str(robot.target_pos))
         robot.if_dir(robot.target_pos, Pos, present_face_dir)
         if (robot.DIR):
             #print("face to the target\n")
