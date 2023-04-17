@@ -1,5 +1,5 @@
 """Judge_py controller."""
-#Author:Boyu Shi
+#Author:TDP_TEAM_11
 import math
 import numpy as np
 from controller import Robot
