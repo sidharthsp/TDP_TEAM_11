@@ -138,7 +138,7 @@ class Nao(Robot):
             self.us.append(self.getDevice(usNames[i]))
             self.us[i].enable(self.timeStep)
 
-    def receive_message(self):  # Boyu Shi, Sidharth Sreeja Prashanth
+    def receive_message(self):  #Sidharth Sreeja Prashanth
         # get the message from supervisor“Judge”
         flag = 0
         if (self.receiver.getQueueLength() > 0):
@@ -530,7 +530,7 @@ class Nao(Robot):
                 self.startMotion(self.SideStepLeft)
 
 
-    def shortest_tangent(self, Pos, obstacle):  # Liu Ziyuan
+    def shortest_tangent(self, Pos, obstacle):  #Ziyuan Liu
         tangent_A_world = [0,0]
         tangent_B_world = [0,0]
         obstacle[0] = obstacle[0] - Pos[0]
