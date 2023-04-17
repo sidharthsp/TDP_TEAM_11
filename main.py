@@ -28,14 +28,14 @@ import time
 
 Robot_num = 4
 
-R_robot = 0.2
+R_robot = 0.35
 
 goal_x_width = 2.6
 goal_y_width = 1
 goal_dis = 4.5
 bottom_line_width = 6
 
-rad_robust = 0.25
+rad_robust = 0.2
 
 pitch_length=9
 
@@ -54,6 +54,8 @@ class Nao(Robot):
         self.shoot = Motion('../../motions/Shoot.motion')
         self.stand = Motion('../../motions/Stand.motion')
         self.standup = Motion('../../motions/StandUpFromFront.motion')
+        self.SideStepLeft1 = Motion('../../motions/SideStepLeft1.motion')
+        self.SideStepRight1 = Motion('../../motions/SideStepRight1.motion')
 
     def set_motion_time_direc(self):
         self.motion_time_direc = {
@@ -125,9 +127,16 @@ class Nao(Robot):
         self.gps = self.getDevice(self.getName() + "gps")
         self.gps.enable(self.timeStep)
 
+
         # inertial unit
         self.inertialUnit = self.getDevice(self.getName() + "IU")
         self.inertialUnit.enable(self.timeStep)
+
+        self.us = []
+        usNames = ['Sonar/Left', 'Sonar/Right']
+        for i in range(0, len(usNames)):
+            self.us.append(self.getDevice(usNames[i]))
+            self.us[i].enable(self.timeStep)
 
     def receive_message(self):  # Boyu Shi
         # get the message from supervisor“Judge”
@@ -503,34 +512,49 @@ class Nao(Robot):
                 closest_dis = -1
 
         return closest_player, closest_dis
+    def avoid(self):
+        if self.us[0].getValue() > 0.5 and self.us[1].getValue() > 0.5:
+            robot.activate_motion = "move"
+            robot.startMotion(robot.move)
+        else:
+            while self.us[0].getValue() < 0.5:
+                print(self.us[0].getValue())
+                self.activate_motion = 'SideStepRight'
+                self.startMotion(self.SideStepRight)
+            while self.us[1].getValue() < 0.5:
+                print(self.us[1].getValue())
+                self.activate_motion = 'SideStepLeft'
+                self.startMotion(self.SideStepLeft)
 
-    def shortest_tangent(self, obstacle):  # Liu Ziyuan
-        Pos = self.gps.getValues()
+
+    def shortest_tangent(self, Pos, obstacle):  # Liu Ziyuan
+        tangent_A_world = [0,0]
+        tangent_B_world = [0,0]
         obstacle[0] = obstacle[0] - Pos[0]
         obstacle[1] = obstacle[1] - Pos[1]
         if (math.sqrt(pow(obstacle[0], 2) + pow(obstacle[1], 2))) <= R_robot:
-            return Pos
+            return [100,100]
         else:
-            K_ra = ((obstacle[0] * obstacle[1]) + (
-                    R_robot * math.sqrt(pow(obstacle[0], 2) + pow(obstacle[1], 2) - pow(R_robot, 2)))) / (
+            K_ra = ((obstacle[0] * obstacle[1]) + (R_robot * math.sqrt(pow(obstacle[0], 2) + pow(obstacle[1], 2) - pow(R_robot, 2)))) / (
                            pow(obstacle[0], 2) - pow(R_robot, 2))
-            K_rb = ((obstacle[0] * obstacle[1]) - (
-                    R_robot * math.sqrt(pow(obstacle[0], 2) + pow(obstacle[1], 2) - pow(R_robot, 2)))) / (
+            K_rb = ((obstacle[0] * obstacle[1]) - (R_robot * math.sqrt(pow(obstacle[0], 2) + pow(obstacle[1], 2) - pow(R_robot, 2)))) / (
                            pow(obstacle[0], 2) - pow(R_robot, 2))
-            tangent_A = [(obstacle[0] + K_ra * obstacle[1]) / 1 + pow(K_ra, 2),
-                         ((obstacle[0] + K_ra * obstacle[1]) / 1 + pow(K_ra, 2) * K_ra)]
-            tangent_B = [(obstacle[0] + K_rb * obstacle[1]) / 1 + pow(K_rb, 2),
-                         ((obstacle[0] + K_rb * obstacle[1]) / 1 + pow(K_rb, 2) * K_rb)]
-            delta_OAx = tangent_A[0] - Pos[0]
-            delta_OAy = tangent_A[1] - Pos[1]
-            dis_OA = math.sqrt(pow(delta_OAx, 2) + pow(delta_OAy, 2))
-            delta_OBx = tangent_B[0] - Pos[0]
-            delta_OBy = tangent_B[1] - Pos[1]
-            dis_OB = math.sqrt(pow(delta_OBx, 2) + pow(delta_OBy, 2))
-            if dis_OA > dis_OB:
-                return tangent_B
+            tangent_A = [(obstacle[0] + K_ra * obstacle[1]) / (1 + pow(K_ra, 2)),
+                         ((obstacle[0] + K_ra * obstacle[1]) / (1 + pow(K_ra, 2))) * K_ra]
+            tangent_A_world[0] = tangent_A[0] + Pos[0]
+            tangent_A_world[1] = tangent_A[1] + Pos[1]
+            tangent_B = [(obstacle[0] + K_rb * obstacle[1]) / (1 + pow(K_rb, 2)),
+                         ((obstacle[0] + K_rb * obstacle[1]) / (1 + pow(K_rb, 2))) * K_rb]
+            tangent_B_world[0] = tangent_B[0] + Pos[0]
+            tangent_B_world[1] = tangent_B[1] + Pos[1]
+            if tangent_A[0] >= tangent_B[0]:
+                print("tangent_B" + '\n')
+                return tangent_B_world
+
             else:
-                return tangent_A
+                print("tangent_A" + '\n')
+                return tangent_A_world
+
 
 robot = Nao()
 
@@ -620,7 +644,10 @@ while robot.step(timestep) != -1:
                 if(player%2!=1):
                     fight=1
             if(fight==0 or robot.target_is!=0):
-                robot.target_pos = robot.shortest_tangent(robot.newest[player])
+                robot.target_pos = robot.shortest_tangent(Pos, robot.newest[player])
+                if robot.target_pos == [100, 100]:
+                    robot.avoid()
+                    continue
                 print(str(robot.rob_name) + 'target pos change to avoid\n' + str(robot.target_pos))
                 robot.if_catch_ball(robot.newest[Robot_num * 2])
                 """
@@ -651,6 +678,7 @@ while robot.step(timestep) != -1:
         elif robot.target_pos[1]<-pitch_length/2-0.3:
             robot.target_pos[1] = -pitch_length / 2 - 0.3
         present_face_dir = robot.inertialUnit.getRollPitchYaw()
+        print(str(robot.target_pos))
         robot.if_dir(robot.target_pos, Pos, present_face_dir)
         if (robot.DIR):
             #print("face to the target\n")
