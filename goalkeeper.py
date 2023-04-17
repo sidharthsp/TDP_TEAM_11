@@ -1,7 +1,7 @@
 """main controller."""
-# Author:Boyu Shi
+# Author:TDP_TEAM_11
 #
-# Copyright 2023 Boyu Shi
+# Copyright 2023 TDP TEAM 11
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ class Nao(Robot):
         self.DiveLeft = Motion('../../motions/DiveLeft.motion')
         self.DiveRight = Motion('../../motions/DiveRight.motion')
 
-    def set_motion_time_direc(self):
+    def set_motion_time_direc(self):#Boyu Shi,Krishna Rajendran, Sidharth Sreeja Prashanth,Arpan Gupta, Ziyuan Liu, Yu Li
         self.motion_time_direc={
             "move":2.6,
             "backwards":2.6,
