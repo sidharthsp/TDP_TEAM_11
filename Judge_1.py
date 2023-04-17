@@ -1,5 +1,19 @@
 """Judge_py controller."""
-#Author:TDP_TEAM_11
+# Author:TDP_TEAM_11
+#
+# Copyright 2023 TDP TEAM 11
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import math
 import numpy as np
 from controller import Robot
@@ -7,6 +21,8 @@ from controller import Emitter
 from controller import Supervisor
 from controller import Node
 
+#key valuables defination
+#Boyu Shi,Krishna Rajendran, Sidharth Sreeja Prashanth,Arpan Gupta, Ziyuan Liu, Yu Li
 Robot_num = 4
 x_width=6
 y_width=9
@@ -60,7 +76,7 @@ class Judge(Supervisor):
             self.robotlist.append("R" + str(i))
             self.robotlist.append("B" + str(i))
         return
-    def robot_initial(self):#Boyu Shi
+    def robot_initial(self):# Boyu Shi
         for i in range(Robot_num * 2):
             node = robot.getFromDef(self.robotlist[i])
             transl = node.getField("translation")
@@ -126,6 +142,7 @@ class Judge(Supervisor):
 
     def check_belong(self):#Krishna Rajendran
         #check which side control the ball
+        #belong_team 1->blue 2->red
         ball = self.getFromDef("ball")
         ball_pos = ball.getPosition()
         blue_control=0
@@ -207,6 +224,7 @@ timestep = int(robot.getBasicTimeStep())
 
 # Main loop:
 # - perform simulation steps until Webots is stopping the controller
+#Boyu Shi,Krishna Rajendran, Sidharth Sreeja Prashanth,Arpan Gupta, Ziyuan Liu, Yu Li
 robot.ballinitial()
 robot.initial_robotlist()
 robot.robot_initial()

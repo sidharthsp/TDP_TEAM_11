@@ -26,19 +26,16 @@ import _thread
 import random
 import time
 
+#key valuables defination
+#Boyu Shi,Krishna Rajendran, Sidharth Sreeja Prashanth,Arpan Gupta, Ziyuan Liu, Yu Li
 Robot_num = 4
-
 R_robot = 0.35
-
 goal_x_width = 2.6
 goal_y_width = 1
 goal_dis = 4.5
 bottom_line_width = 6
-
 rad_robust = 0.2
-
 pitch_length=9
-
 Turn_around_x_width=0.3
 
 
@@ -57,7 +54,7 @@ class Nao(Robot):
         self.SideStepLeft1 = Motion('../../motions/SideStepLeft1.motion')
         self.SideStepRight1 = Motion('../../motions/SideStepRight1.motion')
 
-    def set_motion_time_direc(self):
+    def set_motion_time_direc(self):#Boyu Shi,Krishna Rajendran, Sidharth Sreeja Prashanth,Arpan Gupta, Ziyuan Liu, Yu Li
         self.motion_time_direc = {
             "move": 2.6,
             "backwards": 2.6,
@@ -515,7 +512,8 @@ class Nao(Robot):
 
         return closest_player, closest_dis
 
-    def avoid(self): #Krishna Rajendran
+    def avoid(self): #Ziyuan Liu
+        #get ultrasonic distance sensor value and determain what to do
         if self.us[0].getValue() > 0.5 and self.us[1].getValue() > 0.5:
             robot.activate_motion = "move"
             robot.startMotion(robot.move)
@@ -531,6 +529,8 @@ class Nao(Robot):
 
 
     def shortest_tangent(self, Pos, obstacle):  #Ziyuan Liu
+        #use shortest tangent path planning to avoid obstacles
+        #return the closest tangent point
         tangent_A_world = [0,0]
         tangent_B_world = [0,0]
         obstacle[0] = obstacle[0] - Pos[0]
@@ -575,11 +575,11 @@ timestep = int(robot.getBasicTimeStep())
 initial_robotlist()
 # Main loop:
 # - perform simulation steps until Webots is stopping the controller
-
+#Boyu Shi,Krishna Rajendran, Sidharth Sreeja Prashanth,Arpan Gupta, Ziyuan Liu, Yu Li
 robot.target_pos = robot.gps.getValues()
 robot.stand.play()
 
-while robot.step(timestep) != -1:#Boyu Shi,Krishna Rajendran, Sidharth Sreeja Prashanth,Arpan Gupta, Ziyuan Liu, Yu Li
+while robot.step(timestep) != -1:
     if (robot.receive_message()):
         ball_pos = robot.newest[8]
         Pos = robot.gps.getValues()
