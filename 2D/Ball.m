@@ -5,7 +5,7 @@ classdef Ball
         Position % The position of the ball on the field
         Speed % The speed of the ball
         Direction % The direction of the ball's movement
-        Mass = 2;
+        color
     end
     
     methods
@@ -19,8 +19,15 @@ classdef Ball
         
         function obj = move(obj, dt)
             % A method to update the position of the ball based on speed and direction
-            obj.Position = obj.Position + obj.Speed * dt * [cos(obj.Direction), sin(obj.Direction)];
-            obj.Speed = obj.Speed - 0.03 * obj.Speed;
+            newpos = obj.Position + obj.Speed * dt * [cos(obj.Direction), sin(obj.Direction)];
+
+            if (newpos(2) < 3 &&  newpos(2) > -3)  && (newpos(1) < 4.8 && newpos(1) > -4.8)
+                obj.Position = newpos;
+                
+                obj.Speed = obj.Speed - 0.03 * obj.Speed;
+
+            
+            end
             % Add some code to handle collisions with boundaries or goals here
             
         end
