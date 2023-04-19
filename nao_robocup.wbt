@@ -1,0 +1,306 @@
+#VRML_SIM R2023a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/robots/softbank/nao/protos/Nao.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/objects/balls/protos/RobocupSoccerBall.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023a/projects/robots/mir/mir100/protos/Mir100UltrasonicSensor.proto"
+
+WorldInfo {
+  info [
+    "Simulation of the Robocup Standard Platform League"
+  ]
+  title "Robocup"
+  basicTimeStep 20
+  contactProperties [
+    ContactProperties {
+      material1 "NAO foot material"
+      coulombFriction [
+        7
+      ]
+      bounce 0.3
+      bounceVelocity 0.003
+    }
+  ]
+}
+Viewpoint {
+  orientation 0.3300768531708551 0.019140470247288627 -0.9437599871786991 2.906962522130734
+  position 12.150224700742065 3.983409450610142 9.753519889468416
+  follow "ball"
+}
+TexturedBackground {
+  texture "stadium"
+}
+TexturedBackgroundLight {
+  texture "stadium"
+}
+DEF R0 Nao {
+  translation 0.1489122304593192 -4.395357644370386 0.3072291284253601
+  rotation 0.045117111535967445 0.0445417076641981 0.9979882176283487 1.5925215437334614
+  name "R0"
+  customColor [
+    1 0 0
+  ]
+  controller "goalkeeper"
+  headSlot [
+    Mir100UltrasonicSensor {
+    }
+    InertialUnit {
+      name "R0IU"
+    }
+    GPS {
+      name "R0gps"
+    }
+    Receiver {
+      name "R0r"
+    }
+  ]
+}
+DEF R1 Nao {
+  translation 0.16275167441537056 -0.568271078619811 0.302263918926247
+  rotation -0.006717786096295415 -0.007663426041846806 0.9999480702772848 1.8426613828084137
+  name "R1"
+  customColor [
+    1 0 0
+  ]
+  controller "main"
+  headSlot [
+    Mir100UltrasonicSensor {
+    }
+    Receiver {
+      name "R1r"
+    }
+    GPS {
+      name "R1gps"
+    }
+    InertialUnit {
+      name "R1IU"
+    }
+  ]
+}
+DEF R2 Nao {
+  translation -0.8175378507900906 -1.9857816952533665 0.3055361879802302
+  rotation 0.006166080145578987 -0.005958781796529187 0.999963235511756 1.3400681759141266
+  name "R2"
+  customColor [
+    1 0 0
+  ]
+  controller "main"
+  headSlot [
+    Mir100UltrasonicSensor {
+    }
+    InertialUnit {
+      name "R2IU"
+    }
+    GPS {
+      name "R2gps"
+    }
+    Receiver {
+      name "R2r"
+    }
+  ]
+}
+DEF R3 Nao {
+  translation -1.2724278372393716 -0.5734058614738449 0.30533935797267536
+  rotation -0.0015865910024977755 0.027986053870021652 0.9996070545558265 0.17264543616539452
+  name "R3"
+  customColor [
+    1 0 0
+  ]
+  controller "main"
+  headSlot [
+    Mir100UltrasonicSensor {
+    }
+    InertialUnit {
+      name "R3IU"
+    }
+    GPS {
+      name "R3gps"
+    }
+    Receiver {
+      name "R3r"
+    }
+  ]
+}
+DEF B0 Nao {
+  translation 0.0720654 4.45276 0.293952
+  rotation 0.004410028634509273 -0.00227392929591628 0.9999876903707365 -1.607655307179586
+  name "B0"
+  customColor [
+    0 0 1
+  ]
+  controller "goalkeeper"
+  headSlot [
+    Mir100UltrasonicSensor {
+    }
+    InertialUnit {
+      name "B0IU"
+    }
+    GPS {
+      name "B0gps"
+    }
+    Receiver {
+      name "B0r"
+    }
+  ]
+}
+DEF B1 Nao {
+  translation 0.06453680971154259 0.2090317004788191 0.403354599906268
+  rotation -0.00512397922894475 0.004658676557905978 -0.9999760204972867 1.0840626993554292
+  name "B1"
+  customColor [
+    0 0 1
+  ]
+  controller "main"
+  headSlot [
+    Mir100UltrasonicSensor {
+    }
+    InertialUnit {
+      name "B1IU"
+    }
+    GPS {
+      name "B1gps"
+    }
+    Receiver {
+      name "B1r"
+    }
+  ]
+}
+DEF B3 Nao {
+  translation 1.02792 0.718886 0.395717
+  rotation 0.0038249285994979045 -0.0003196308829667771 0.9999926338515236 -2.393045307179586
+  name "B3"
+  customColor [
+    0 0 1
+  ]
+  controller "main"
+  headSlot [
+    Mir100UltrasonicSensor {
+    }
+    InertialUnit {
+      name "B3IU"
+    }
+    GPS {
+      name "B3gps"
+    }
+    Receiver {
+      name "B3r"
+    }
+  ]
+}
+DEF B2 Nao {
+  translation 0.613158 1.43849 0.397081
+  rotation 0.004179130578298338 -0.001502670207935997 0.999990138376302 -1.8694453071795865
+  name "B2"
+  customColor [
+    0 0 1
+  ]
+  controller "main"
+  headSlot [
+    Mir100UltrasonicSensor {
+    }
+    InertialUnit {
+      name "B2IU"
+    }
+    GPS {
+      name "B2gps"
+    }
+    Receiver {
+      name "B2r"
+    }
+  ]
+}
+DEF ball RobocupSoccerBall {
+  translation 0.050293934391986074 -0.08406917259236045 0.0699224131437489
+  rotation 0.734607304498324 -0.15670172749113628 -0.660148980745256 -2.567545388321763
+  name "ball"
+}
+Robot {
+  children [
+    Emitter {
+    }
+  ]
+  name "Judge"
+  controller "Judge_py"
+  supervisor TRUE
+}
+Solid {
+  children [
+    Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "../../pitch2.png"
+          ]
+        }
+        textureTransform TextureTransform {
+          rotation 11
+        }
+      }
+      geometry Plane {
+        size 8 11
+      }
+    }
+  ]
+  name "pitch"
+  boundingObject Plane {
+    size 11 12
+  }
+  locked TRUE
+}
+DEF display Robot {
+  children [
+    Display {
+    }
+  ]
+  controller "display"
+  supervisor TRUE
+}
+Solid {
+  translation 0 5 0.8
+  rotation 0 0 1 1.5708
+  children [
+    Shape {
+      geometry Mesh {
+        url [
+          "../../goal2.stl"
+        ]
+      }
+    }
+  ]
+  name "goal_blue"
+  boundingObject Mesh {
+    url [
+      "../../goal2.stl"
+    ]
+  }
+  locked TRUE
+  recognitionColors [
+    0 0 0.4
+  ]
+}
+Solid {
+  translation 0 -5 0.8
+  rotation 0 0 1 -1.5707996938995747
+  children [
+    Shape {
+      appearance Appearance {
+      }
+      geometry Mesh {
+        url [
+          "../../goal2.stl"
+        ]
+      }
+    }
+  ]
+  name "goal_red"
+  boundingObject Mesh {
+    url [
+      "../../goal2.stl"
+    ]
+  }
+  locked TRUE
+  recognitionColors [
+    0.4 0 0
+  ]
+}
